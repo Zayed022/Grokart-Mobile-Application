@@ -12,15 +12,23 @@ const Navbar = () => {
     navigation.navigate("Login")
   };
 
+  const handleCartRedirect = () =>{
+    navigation.navigate("Cart")
+  }
+
+  const handleSearch =()=>{
+    navigation.navigate("Search")
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.navbar}>
         <Text style={styles.appName}>GroKart</Text>
 
-        <TextInput placeholder="Search products..." style={styles.searchBar} />
+        <TextInput onPress={handleSearch} placeholder="Search products..." style={styles.searchBar} />
 
         <View style={styles.iconContainer}>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={handleCartRedirect}>
             <Icon name="shopping-cart" size={30} color="black" />
           </TouchableOpacity>
 

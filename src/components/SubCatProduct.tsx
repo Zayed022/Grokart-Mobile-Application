@@ -1,45 +1,37 @@
-import React, { useContext, useEffect, useState ,createContext} from "react";
-import { View, Text, Image, TouchableOpacity, FlatList, ActivityIndicator } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useRoute, useNavigation } from "@react-navigation/native";
-import { CartContext } from "../context/Cart";
+import React, { useState, useEffect } from "react";
+import { View, Text, FlatList, Image, ActivityIndicator, StyleSheet, TouchableOpacity } from "react-native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 
-const SubcategoryPage = () => {
-    type Product = {
-        id: string;
-        image: string;
-        name: string;
-        price: number;
-      };
-      
-    interface CartContextType {
-        cart: any[];
-        addToCart: (item: any) => void;
-      }
-      
-      
-      
+interface Product {
+  _id: string;
+  name: string;
+  price: number;
+  description: string;
+  image: string;
+}
+
+const SubCatProduct = () => {
   const route = useRoute();
+  const { subCategory } = route.params || {};
+
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
   const navigation = useNavigation();
-  const { subCategory } = route.params as { subCategory: string };
-
- 
-const { addToCart } = useContext<CartContextType>(CartContext);
-
-
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [cart, setCart] = useState({});
 
   useEffect(() => {
-    if (!subCategory) return;
-
     const fetchProducts = async () => {
       try {
+        console.log("Fetching products for subCategory:", subCategory);
         const response = await fetch(
-          `https://grokart-2.onrender.com/api/v1/products/subCategory/${encodeURIComponent(subCategory)}`
+          `https://grokart-2.onrender.com/api/v1/products/subCategory/${subCategory}`
         );
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
         const data = await response.json();
+        console.log("API Response:", data);
 
         if (data.message === "Products fetched" && Array.isArray(data.products)) {
           setProducts(data.products);
@@ -48,6 +40,7 @@ const { addToCart } = useContext<CartContextType>(CartContext);
         }
       } catch (error) {
         console.error("Error fetching products:", error);
+        setProducts([]);
       } finally {
         setLoading(false);
       }
@@ -56,128 +49,116 @@ const { addToCart } = useContext<CartContextType>(CartContext);
     fetchProducts();
   }, [subCategory]);
 
-  useEffect(() => {
-    const loadCart = async () => {
-      try {
-        const storedCart = await AsyncStorage.getItem("cart");
-        if (storedCart) {
-          setCart(JSON.parse(storedCart));
-        }
-      } catch (error) {
-        console.error("Error loading cart:", error);
-      }
-    };
-
-    loadCart();
-  }, []);
-
-  const updateCart = async (newCart) => {
-    setCart(newCart);
-    try {
-      await AsyncStorage.setItem("cart", JSON.stringify(newCart));
-    } catch (error) {
-      console.error("Error updating cart:", error);
-    }
-  };
-
-  const increaseQuantity = (product: any) => {
-    const updatedCart = { ...cart };
-    updatedCart[product._id] = (updatedCart[product._id] || 0) + 1;
-  
-    // Update the cart with only one argument
-    updateCart(updatedCart);
-  
-    // Optional: If you need to update with product info, adjust the function
-    addToCart(product);
-  };
-  
-  const decreaseQuantity = (product) => {
-    const updatedCart = { ...cart };
-
-    if (updatedCart[product._id] > 1) {
-      updatedCart[product._id] -= 1;
-    } else {
-      delete updatedCart[product._id];
-    }
-
-    updateCart(updatedCart);
-    addToCart(product || 0);
-  };
-
-  if (loading) {
-    return <ActivityIndicator size="large" color="#FF69B4" style={{ marginTop: 50 }} />;
+  const handleDetails = (id: string)=>{
+    navigation.navigate("ProductDetails",{productId: id})
   }
 
   return (
-    <View style={{ padding: 16 }}>
-      <Text style={{ fontSize: 24, fontWeight: "bold", textAlign: "center" }}>
-        Products in {subCategory || "this category"}
-      </Text>
+    <View style={styles.container}>
+      <Text style={styles.header}>Products in {subCategory}</Text>
 
-      <FlatList
-        data={products}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item: product }: { item: Product }) => (
-          <View
-            style={{
-              backgroundColor: "#fff",
-              marginBottom: 16,
-              padding: 16,
-              borderRadius: 10,
-            }}
-          >
-            <TouchableOpacity
-              onPress={() =>
-                //navigation.navigate("ProductDetail", { productId: product._id })
-              }
+      {loading ? (
+        <ActivityIndicator size="large" color="#FF4081" style={styles.loader} />
+      ) : products.length > 0 ? (
+        <FlatList
+          data={products}
+          keyExtractor={(item) => item._id}
+          numColumns={2}
+          contentContainerStyle={styles.list}
+          renderItem={({ item }: { item: Product }) => (
+            <TouchableOpacity 
+              style={styles.productCard} 
+              onPress={() => handleDetails(item._id)}
             >
-              {product.image && (
-                <Image
-                  source={{ uri: product.image }}
-                  style={{ width: "100%", height: 150, borderRadius: 10 }}
-                />
-              )}
-              <Text style={{ fontWeight: "bold", marginTop: 8 }}>{product.name}</Text>
-              <Text style={{ color: "gray" }}>₹{product.price}</Text>
-            </TouchableOpacity>
+            <View style={styles.productCard}>
+              <Image source={{ uri: item.image }} style={styles.image} />
+              <Text style={styles.productName}>{item.name}</Text>
+              <Text style={styles.price}>₹{item.price}</Text>
+              <TouchableOpacity style={styles.button}>
+                <Text style={styles.buttonText}>Add to Cart</Text>
+              </TouchableOpacity>
 
-            <View style={{ marginTop: 12 }}>
-              {cart[product.id] ? (
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <TouchableOpacity onPress={() => decreaseQuantity(product)}>
-                    <Text style={{ fontSize: 24, color: "#FF69B4" }}>−</Text>
-                  </TouchableOpacity>
-                  <Text style={{ fontSize: 18 }}>{cart[product.id]}</Text>
-                  <TouchableOpacity onPress={() => increaseQuantity(product)}>
-                    <Text style={{ fontSize: 24, color: "#FF69B4" }}>+</Text>
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                <TouchableOpacity
-                  style={{
-                    backgroundColor: "#FF69B4",
-                    padding: 10,
-                    borderRadius: 8,
-                    alignItems: "center",
-                  }}
-                  onPress={() => increaseQuantity(product)}
-                >
-                  <Text style={{ color: "#fff" }}>Add to Cart</Text>
-                </TouchableOpacity>
-              )}
             </View>
-          </View>
-        )}
-        ListEmptyComponent={<Text>No products found in this subcategory.</Text>}
-      />
+            </TouchableOpacity>
+          )}
+        />
+      ) : (
+        <Text style={styles.noProducts}>No products found. Try another category.</Text>
+      )}
     </View>
   );
 };
 
-export default SubcategoryPage;
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#fff",
+    padding: 16,
+  },
+  header: {
+    fontSize: 22,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginBottom: 16,
+    color: "#333",
+  },
+  loader: {
+    marginTop: 20,
+  },
+  list: {
+    paddingBottom: 20,
+  },
+  productCard: {
+    flex: 1,
+    backgroundColor: "#fff",
+    margin: 8,
+    borderRadius: 12,
+    padding: 12,
+    alignItems: "center",
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
+  image: {
+    width: 140,
+    height: 140,
+    borderRadius: 8,
+    marginBottom: 10,
+    resizeMode: "cover",
+  },
+  productName: {
+    fontSize: 16,
+    fontWeight: "bold",
+    textAlign: "center",
+    color: "#333",
+    marginBottom: 4,
+  },
+  price: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#FF4081",
+    marginBottom: 10,
+  },
+  button: {
+    backgroundColor: "#FF4081",
+    paddingVertical: 10,
+    width: "100%",
+    borderRadius: 6,
+    alignItems: "center",
+  },
+  buttonText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "bold",
+  },
+  noProducts: {
+    textAlign: "center",
+    fontSize: 16,
+    color: "#666",
+    marginTop: 20,
+  },
+});
+
+export default SubCatProduct;

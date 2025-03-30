@@ -47,6 +47,10 @@ const CsCards: React.FC = () => {
   if (loading) {
     return <ActivityIndicator size="large" color="#0000ff" style={styles.loader} />;
   }
+  const handleCategoryRedirect = (subcategory: string) => {
+    navigation.navigate("Category", { subCategory: subcategory });
+  };
+  
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -58,12 +62,12 @@ const CsCards: React.FC = () => {
 
           <ScrollView horizontal showsHorizontalScrollIndicator={true} style={styles.subcategoryScroll}>
             {subcategories.map((subcategory) => (
-              <TouchableOpacity
+              <TouchableOpacity onPress={() => handleCategoryRedirect(subcategory.subcategory)}
                 key={subcategory._id}
                 //onPress={() => navigation.navigate('SubCategory', { subcategory: subcategory.subcategory })}
                 style={styles.card}
               >
-                <Image
+                <Image 
                   source={{ uri: subcategory.image || 'https://via.placeholder.com/200' }}
                   style={styles.image}
                 />

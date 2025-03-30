@@ -1,122 +1,141 @@
-import React, { useContext, useEffect, useState } from "react";
-import { View, Text, FlatList, Image, TouchableOpacity, ActivityIndicator, TextInput } from "react-native";
-import { CartContext } from "../context/Cart";
+import { useNavigation } from "@react-navigation/native";
+import React, { useEffect, useState } from "react";
+import { 
+  View, Text, Image, FlatList, TouchableOpacity, 
+  ActivityIndicator, StyleSheet 
+} from "react-native";
+
+interface Product {
+  _id: string;
+  name: string;
+  price: number;
+  category: string;
+  subCategory?: string;
+  image: string;
+}
 
 const Items = () => {
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const { cartItems, addToCart } = useContext(CartContext);
-  const [filteredProducts, setFilteredProducts] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [cart, setCart] = useState(() => JSON.parse(localStorage.getItem("cart")) || {});
+  const navigation = useNavigation()
 
   useEffect(() => {
-    localStorage.setItem("cart", JSON.stringify(cart));
-  }, [cart]);
-
-  const increaseQuantity = (product) => {
-    const updatedCart = { ...cart, [product._id]: (cart[product._id] || 0) + 1 };
-    setCart(updatedCart);
-    addToCart(product, updatedCart[product._id]);
-  };
-
-  const decreaseQuantity = (product) => {
-    const updatedCart = { ...cart };
-    if (updatedCart[product._id] > 1) {
-      updatedCart[product._id] -= 1;
-    } else {
-      delete updatedCart[product._id];
-    }
-    setCart(updatedCart);
-    addToCart(product, updatedCart[product._id] || 0);
-  };
-
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const response = await fetch("https://grokart-2.onrender.com/api/v1/products/get-product");
-        if (!response.ok) throw new Error("Failed to fetch products");
-        const data = await response.json();
-        if (Array.isArray(data)) setProducts(data);
-      } catch (error) {
-        console.error("Error fetching products:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchProducts();
+    fetch("https://grokart-2.onrender.com/api/v1/products/get-product")
+      .then(response => response.json())
+      .then(data => {
+        console.log("Received products:", data); // Debug log
+        setProducts(Array.isArray(data) ? data : []);
+      })
+      .catch(error => {
+        console.error("Fetch error:", error);
+      })
+      .finally(() => setLoading(false));
   }, []);
+  const handleDetails = (id: string)=>{
+    navigation.navigate("ProductDetails",{productId: id})
+  }
 
-  const handleSearch = (query) => {
-    setSearchTerm(query);
-    setFilteredProducts(
-      query.trim() === ""
-        ? products
-        : products.filter((product) => product.name.toLowerCase().includes(query.toLowerCase()))
-    );
-  };
-
-  return (
-    <View style={{ padding: 16 }}>
-      <TextInput
-        style={{ borderWidth: 1, padding: 8, marginBottom: 16 }}
-        placeholder="Search products..."
-        value={searchTerm}
-        onChangeText={handleSearch}
+  const renderItem = ({ item }: { item: Product }) => (
+    <View style={styles.productCard}>
+      <TouchableOpacity 
+        style={styles.productCard} 
+        onPress={() => handleDetails(item._id)}
+      >
+      <Image 
+        source={{ uri: item.image || 'https://via.placeholder.com/150' }} 
+        style={styles.image} 
+        defaultSource={{ uri: 'https://via.placeholder.com/150' }}
       />
-      {loading ? (
-        <ActivityIndicator size="large" color="#FF4081" />
-      ) : (
-        <FlatList
-          data={filteredProducts.length > 0 ? filteredProducts : products}
-          keyExtractor={(item) => item._id}
-          numColumns={2}
-          renderItem={({ item: product }) => (
-            <View style={{ flex: 1, margin: 8, padding: 16, backgroundColor: "white", borderRadius: 10, elevation: 3 }}>
-              {product.discount > 0 && (
-                <Text style={{ backgroundColor: "purple", color: "white", padding: 4, borderRadius: 5, alignSelf: "flex-start" }}>
-                  {product.discount}% Off
-                </Text>
-              )}
-              <Image
-                source={{ uri: product.image || "https://via.placeholder.com/300" }}
-                style={{ width: "100%", height: 120, resizeMode: "cover", borderRadius: 5 }}
-              />
-              <Text style={{ fontSize: 16, fontWeight: "bold" }}>{product.name}</Text>
-              <Text>{product.weight || "500g"}</Text>
-              <View style={{ flexDirection: "row", alignItems: "center", marginTop: 8 }}>
-                <Text style={{ fontSize: 18, fontWeight: "bold", color: "green" }}>₹{product.discountedPrice || product.price}</Text>
-                {product.discount > 0 && (
-                  <Text style={{ marginLeft: 8, textDecorationLine: "line-through", color: "gray" }}>₹{product.price}</Text>
-                )}
-              </View>
-              {cart[product._id] ? (
-                <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-around", marginTop: 8 }}>
-                  <TouchableOpacity onPress={() => decreaseQuantity(product)}>
-                    <Text style={{ fontSize: 20, color: "#FF4081" }}>−</Text>
-                  </TouchableOpacity>
-                  <Text>{cart[product._id]}</Text>
-                  <TouchableOpacity onPress={() => increaseQuantity(product)}>
-                    <Text style={{ fontSize: 20, color: "#FF4081" }}>+</Text>
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                <TouchableOpacity
-                  onPress={() => {
-                    addToCart(product);
-                    setCart((prev) => ({ ...prev, [product._id]: 1 }));
-                  }}
-                  style={{ backgroundColor: "#FF4081", padding: 10, borderRadius: 5, marginTop: 8 }}
-                >
-                  <Text style={{ color: "white", textAlign: "center" }}>Add to Cart</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          )}
-        />
-      )}
+      </TouchableOpacity>
+      <Text style={styles.productName}>{item.name}</Text>
+      <Text style={styles.price}>₹{item.price}</Text>
+      <TouchableOpacity style={styles.button}>
+        <Text style={styles.buttonText}>Add to Cart</Text>
+      </TouchableOpacity>
     </View>
   );
+
+  if (loading) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#FF4081" />
+      </View>
+    );
+  }
+
+  if (products.length === 0) {
+    return (
+      <View style={styles.center}>
+        <Text>No products found</Text>
+      </View>
+    );
+  }
+
+  return (
+    <FlatList
+      data={products}
+      renderItem={renderItem}
+      keyExtractor={(item) => item._id}
+      numColumns={2}
+      contentContainerStyle={styles.list}
+    />
+  );
 };
+
+const styles = StyleSheet.create({
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  list: {
+    paddingBottom: 20,
+  },
+  productCard: {
+    flex: 1,
+    backgroundColor: "#fff",
+    margin: 8,
+    borderRadius: 12,
+    padding: 12,
+    alignItems: "center",
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
+  image: {
+    width: 140,
+    height: 140,
+    borderRadius: 8,
+    marginBottom: 10,
+    resizeMode: "cover",
+  },
+  productName: {
+    fontSize: 16,
+    fontWeight: "bold",
+    textAlign: "center",
+    color: "#333",
+    marginBottom: 4,
+  },
+  price: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#FF4081",
+    marginBottom: 10,
+  },
+  button: {
+    backgroundColor: "#FF4081",
+    paddingVertical: 10,
+    width: "100%",
+    borderRadius: 6,
+    alignItems: "center",
+  },
+  buttonText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "bold",
+  },
+});
 
 export default Items;
