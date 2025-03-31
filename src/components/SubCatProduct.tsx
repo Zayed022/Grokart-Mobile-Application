@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, FlatList, Image, ActivityIndicator, StyleSheet, TouchableOpacity } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
+import { useCart } from "../context/Cart"; // Import Cart Context
 
 interface Product {
   _id: string;
   name: string;
   price: number;
-  description: string;
+  category: string;
+  subCategory?: string;
   image: string;
 }
 
@@ -17,6 +19,7 @@ const SubCatProduct = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const navigation = useNavigation();
+  const { cart, addToCart, removeFromCart, updateQuantity } = useCart();
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -49,9 +52,45 @@ const SubCatProduct = () => {
     fetchProducts();
   }, [subCategory]);
 
-  const handleDetails = (id: string)=>{
-    navigation.navigate("ProductDetails",{productId: id})
-  }
+  const handleDetails = (id: string) => {
+    navigation.navigate("ProductDetails", { productId: id });
+  };
+
+  const handleDecreaseQuantity = (id: string, currentQuantity: number) => {
+    if (currentQuantity === 1) {
+      removeFromCart(id); // Remove item if quantity is 1
+    } else {
+      updateQuantity(id, currentQuantity - 1);
+    }
+  };
+
+  const renderItem = ({ item }: { item: Product }) => {
+    const cartItem = cart.find((cartItem) => cartItem._id === item._id);
+
+    return (
+      <TouchableOpacity style={styles.productCard} onPress={() => handleDetails(item._id)}>
+        <Image source={{ uri: item.image }} style={styles.image} />
+        <Text style={styles.productName}>{item.name}</Text>
+        <Text style={styles.price}>₹{item.price}</Text>
+
+        {cartItem ? (
+          <View style={styles.quantityContainer}>
+            <TouchableOpacity onPress={() => handleDecreaseQuantity(item._id, cartItem.quantity)}>
+              <Text style={styles.quantityButton}>-</Text>
+            </TouchableOpacity>
+            <Text style={styles.quantityText}>{cartItem.quantity}</Text>
+            <TouchableOpacity onPress={() => updateQuantity(item._id, cartItem.quantity + 1)}>
+              <Text style={styles.quantityButton}>+</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity style={styles.button} onPress={() => addToCart({ ...item, quantity: 1 })}>
+            <Text style={styles.buttonText}>Add to Cart</Text>
+          </TouchableOpacity>
+        )}
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -65,25 +104,10 @@ const SubCatProduct = () => {
           keyExtractor={(item) => item._id}
           numColumns={2}
           contentContainerStyle={styles.list}
-          renderItem={({ item }: { item: Product }) => (
-            <TouchableOpacity 
-              style={styles.productCard} 
-              onPress={() => handleDetails(item._id)}
-            >
-            <View style={styles.productCard}>
-              <Image source={{ uri: item.image }} style={styles.image} />
-              <Text style={styles.productName}>{item.name}</Text>
-              <Text style={styles.price}>₹{item.price}</Text>
-              <TouchableOpacity style={styles.button}>
-                <Text style={styles.buttonText}>Add to Cart</Text>
-              </TouchableOpacity>
-
-            </View>
-            </TouchableOpacity>
-          )}
+          renderItem={renderItem}
         />
       ) : (
-        <Text style={styles.noProducts}>No products found. Try another category.</Text>
+        <Text>No products found. Try another category.</Text>
       )}
     </View>
   );
@@ -153,11 +177,25 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "bold",
   },
-  noProducts: {
-    textAlign: "center",
+  quantityContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
+    borderWidth: 1,
+    borderColor: "#FF4081",
+    borderRadius: 6,
+    padding: 5,
+  },
+  quantityButton: {
+    fontSize: 18,
+    color: "#FF4081",
+    paddingHorizontal: 10,
+  },
+  quantityText: {
     fontSize: 16,
-    color: "#666",
-    marginTop: 20,
+    fontWeight: "bold",
+    paddingHorizontal: 10,
   },
 });
 

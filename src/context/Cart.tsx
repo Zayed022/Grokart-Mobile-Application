@@ -1,50 +1,79 @@
-import React, { createContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage"; // To persist cart data
 
-export const CartContext = createContext({} as any);
+interface CartItem {
+  _id: string;
+  name: string;
+  price: number;
+  image: string;
+  quantity: number;
+}
 
-export const CartProvider = ({ children }) => {
-  const [cartItems, setCartItems] = useState(() => {
-    // Load cart from localStorage (if applicable)
-    return {};
-  });
+interface CartContextType {
+  cart: CartItem[];
+  addToCart: (product: Omit<CartItem, "quantity">) => void;
+  removeFromCart: (id: string) => void;
+  updateQuantity: (id: string, quantity: number) => void;
+}
 
+const CartContext = createContext<CartContextType | undefined>(undefined);
+
+export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [cart, setCart] = useState<CartItem[]>([]);
+
+  // Load cart from AsyncStorage when the app starts
   useEffect(() => {
-    // Persist cart data if needed
-    // localStorage.setItem("cart", JSON.stringify(cartItems));
-  }, [cartItems]);
+    const loadCart = async () => {
+      const storedCart = await AsyncStorage.getItem("cart");
+      if (storedCart) {
+        setCart(JSON.parse(storedCart));
+      }
+    };
+    loadCart();
+  }, []);
 
-  // Add to cart
-  const addToCart = (product) => {
-    setCartItems((prevCart) => ({
-      ...prevCart,
-      [product._id]: (prevCart[product._id] || 0) + 1,
-    }));
-  };
+  // Save cart to AsyncStorage whenever it changes
+  useEffect(() => {
+    AsyncStorage.setItem("cart", JSON.stringify(cart));
+  }, [cart]);
 
-  // Remove from cart
-  const removeFromCart = (productId) => {
-    setCartItems((prevCart) => {
-      const newCart = { ...prevCart };
-      delete newCart[productId];
-      return newCart;
+  const addToCart = (product: Omit<CartItem, "quantity">) => {
+    setCart((prevCart) => {
+      const existingItem = prevCart.find((item) => item._id === product._id);
+      if (existingItem) {
+        return prevCart.map((item) =>
+          item._id === product._id ? { ...item, quantity: item.quantity + 1 } : item
+        );
+      }
+      return [...prevCart, { ...product, quantity: 1 }];
     });
   };
 
-  // Update Quantity
-  const updateQuantity = (productId, quantity) => {
-    if (quantity <= 0) {
-      removeFromCart(productId);
-    } else {
-      setCartItems((prevCart) => ({
-        ...prevCart,
-        [productId]: quantity,
-      }));
-    }
+  const removeFromCart = (id: string) => {
+    setCart((prevCart) => prevCart.filter((item) => item._id !== id));
+  };
+
+  const updateQuantity = (id: string, quantity: number) => {
+    setCart((prevCart) =>
+      quantity > 0
+        ? prevCart.map((item) =>
+            item._id === id ? { ...item, quantity } : item
+          )
+        : prevCart.filter((item) => item._id !== id) // Remove item if quantity is 0
+    );
   };
 
   return (
-    <CartContext.Provider value={{ cartItems, addToCart, removeFromCart, updateQuantity }}>
+    <CartContext.Provider value={{ cart, addToCart, removeFromCart, updateQuantity }}>
       {children}
     </CartContext.Provider>
   );
+};
+
+export const useCart = () => {
+  const context = useContext(CartContext);
+  if (!context) {
+    throw new Error("useCart must be used within a CartProvider");
+  }
+  return context;
 };
