@@ -10,10 +10,11 @@ export class Home extends Component {
     return (
       <View style={styles.container}>
         <Navbar />
+        
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <CsCards />
           <Items />
-          <Text style={styles.text}>Home Component</Text>
+          <Text style={styles.text}>Home Component </Text>
         </ScrollView>
       </View>
     );

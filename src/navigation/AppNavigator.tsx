@@ -10,6 +10,7 @@ import CartDisplay from '../components/CartDisplay';
 import SubCatProduct from '../components/SubCatProduct';
 import ProductDetails from '../components/ProductDetails';
 import Search from '../components/Search';
+import Checkout from '../components/Checkout';
 
 const Stack = createStackNavigator();
 
@@ -24,6 +25,7 @@ const AppNavigator = () => {
       <Stack.Screen name="Category" component={SubCatProduct} />
       <Stack.Screen name="ProductDetails" component={ProductDetails} />
       <Stack.Screen name="Cart" component={CartDisplay} />
+      <Stack.Screen name="Checkout" component={Checkout} />
 
     </Stack.Navigator>
   );

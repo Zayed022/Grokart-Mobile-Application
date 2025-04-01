@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TextInput, FlatList, Image, StyleSheet } from "react-native";
+import { View, Text, TextInput, FlatList, Image, StyleSheet, TouchableOpacity } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 
 interface Product {
   _id: string;
@@ -13,6 +14,7 @@ const Search = () => {
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
+  const navigation = useNavigation(); // ✅ Navigation hook
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -48,6 +50,10 @@ const Search = () => {
     }
   };
 
+  const handleProductPress = (product: Product) => {
+    navigation.navigate("ProductDetails", { productId: product._id });
+  };
+
   return (
     <View style={styles.container}>
       <TextInput
@@ -63,11 +69,11 @@ const Search = () => {
           data={filteredProducts}
           keyExtractor={(item) => item._id}
           renderItem={({ item }) => (
-            <View style={styles.productCard}>
+            <TouchableOpacity style={styles.productCard} onPress={() => handleProductPress(item)}>
               <Image source={{ uri: item.image || "https://via.placeholder.com/300" }} style={styles.image} />
               <Text style={styles.productName}>{item.name}</Text>
               <Text style={styles.price}>₹{item.price}</Text>
-            </View>
+            </TouchableOpacity>
           )}
         />
       )}

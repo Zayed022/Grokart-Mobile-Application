@@ -1,6 +1,11 @@
 import React from "react";
-import { View, Text, Image, FlatList, TouchableOpacity, ActivityIndicator, StyleSheet } from "react-native";
+import { 
+  View, Text, Image, FlatList, TouchableOpacity, 
+  ActivityIndicator, StyleSheet, Dimensions 
+} from "react-native";
 import { useCart } from "../context/Cart";
+
+const screenWidth = Dimensions.get("window").width;
 
 interface Product {
   _id: string;
@@ -39,24 +44,28 @@ const Items = () => {
     return (
       <View style={styles.productCard}>
         <Image source={{ uri: item.image || "https://via.placeholder.com/150" }} style={styles.image} />
-        <Text style={styles.productName}>{item.name}</Text>
-        <Text style={styles.price}>₹{item.price}</Text>
+        
+        <View style={styles.infoContainer}>
+          <Text style={styles.productName} numberOfLines={2}>{item.name}</Text>
+          <Text style={styles.price}>₹{item.price}</Text>
 
-        {quantity > 0 ? (
-          <View style={styles.quantityContainer}>
-            <TouchableOpacity onPress={() => handleDecreaseQuantity(item._id, quantity)}>
-              <Text style={styles.quantityButton}>-</Text>
+          {/* Add to Cart & Quantity Selector */}
+          {quantity > 0 ? (
+            <View style={styles.quantityContainer}>
+              <TouchableOpacity onPress={() => handleDecreaseQuantity(item._id, quantity)} style={styles.quantityButton}>
+                <Text style={styles.quantityButtonText}>-</Text>
+              </TouchableOpacity>
+              <Text style={styles.quantityText}>{quantity}</Text>
+              <TouchableOpacity onPress={() => updateQuantity(item._id, quantity + 1)} style={styles.quantityButton}>
+                <Text style={styles.quantityButtonText}>+</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity style={styles.addButton} onPress={() => addToCart(item)}>
+              <Text style={styles.addButtonText}>Add to Cart</Text>
             </TouchableOpacity>
-            <Text style={styles.quantityText}>{quantity}</Text>
-            <TouchableOpacity onPress={() => updateQuantity(item._id, quantity + 1)}>
-              <Text style={styles.quantityButton}>+</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <TouchableOpacity style={styles.button} onPress={() => addToCart(item)}>
-            <Text style={styles.buttonText}>Add to Cart</Text>
-          </TouchableOpacity>
-        )}
+          )}
+        </View>
       </View>
     );
   };
@@ -64,7 +73,7 @@ const Items = () => {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#FF4081" />
+        <ActivityIndicator size="large" color="#ff4d4d" />
       </View>
     );
   }
@@ -72,25 +81,108 @@ const Items = () => {
   if (products.length === 0) {
     return (
       <View style={styles.center}>
-        <Text>No products found</Text>
+        <Text style={styles.emptyText}>No products found</Text>
       </View>
     );
   }
 
-  return <FlatList data={products} renderItem={renderItem} keyExtractor={(item) => item._id} numColumns={2} />;
+  return (
+    <FlatList 
+      data={products} 
+      renderItem={renderItem} 
+      keyExtractor={(item) => item._id} 
+      numColumns={2} 
+      columnWrapperStyle={styles.row} 
+    />
+  );
 };
 
 const styles = StyleSheet.create({
-  center: { flex: 1, justifyContent: "center", alignItems: "center" },
-  productCard: { flex: 1, backgroundColor: "#fff", margin: 8, borderRadius: 12, padding: 12, alignItems: "center" },
-  image: { width: 140, height: 140, borderRadius: 8, marginBottom: 10, resizeMode: "cover" },
-  productName: { fontSize: 16, fontWeight: "bold", textAlign: "center", color: "#333", marginBottom: 4 },
-  price: { fontSize: 16, fontWeight: "bold", color: "#FF4081", marginBottom: 10 },
-  button: { backgroundColor: "#FF4081", paddingVertical: 10, width: "100%", borderRadius: 6, alignItems: "center" },
-  buttonText: { color: "#fff", fontSize: 14, fontWeight: "bold" },
-  quantityContainer: { flexDirection: "row", alignItems: "center", justifyContent: "center", width: "100%", borderWidth: 1, borderColor: "#FF4081", borderRadius: 6, padding: 5 },
-  quantityButton: { fontSize: 18, color: "#FF4081", paddingHorizontal: 10 },
-  quantityText: { fontSize: 16, fontWeight: "bold", paddingHorizontal: 10 },
+  center: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  emptyText: {
+    fontSize: 18,
+    color: "#666",
+  },
+  row: {
+    justifyContent: "space-between",
+    paddingHorizontal: 10,
+  },
+  productCard: {
+    width: (screenWidth / 2) - 20,
+    backgroundColor: "#fff",
+    marginVertical: 8,
+    borderRadius: 12,
+    padding: 12,
+    alignItems: "center",
+    elevation: 3, // Android shadow
+    shadowColor: "#000", // iOS shadow
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+  },
+  image: {
+    width: "100%",
+    height: 140,
+    borderRadius: 8,
+    resizeMode: "cover",
+  },
+  infoContainer: {
+    width: "100%",
+    alignItems: "center",
+  },
+  productName: {
+    fontSize: 14,
+    fontWeight: "600",
+    textAlign: "center",
+    color: "#222",
+    marginVertical: 5,
+  },
+  price: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#ff4d4d",
+    marginBottom: 8,
+  },
+  addButton: {
+    backgroundColor: "#ff4d4d",
+    paddingVertical: 8,
+    width: "100%",
+    borderRadius: 6,
+    alignItems: "center",
+    marginTop: 5,
+  },
+  addButtonText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "bold",
+  },
+  quantityContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#ff4d4d",
+    borderRadius: 6,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    marginTop: 5,
+  },
+  quantityButton: {
+    paddingHorizontal: 10,
+  },
+  quantityButtonText: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#ff4d4d",
+  },
+  quantityText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    marginHorizontal: 10,
+  },
 });
 
 export default Items;
