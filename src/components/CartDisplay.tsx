@@ -1,88 +1,139 @@
-/*
-import React, { useState } from "react";
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, Modal, Alert } from "react-native";
+import React, { useEffect, useState } from "react";
+import { 
+  View, 
+  Text, 
+  FlatList, 
+  TouchableOpacity, 
+  StyleSheet, 
+  Image, 
+  Modal, 
+  Alert,
+  Platform 
+} from "react-native";
 import { useCart } from "../context/Cart";
 import MapView, { Marker } from "react-native-maps";
 import { useNavigation } from "@react-navigation/native";
 import Geolocation from 'react-native-geolocation-service';
-import { openSettings } from "react-native-permissions"; 
-import { PermissionsAndroid, Platform } from 'react-native';
-import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
+import { check, request, PERMISSIONS, RESULTS, openSettings } from 'react-native-permissions';
 
+interface Location {
+  latitude: number;
+  longitude: number;
+}
 
 const CartDisplay = () => {
   const { cart, updateQuantity, removeFromCart } = useCart();
   const [modalVisible, setModalVisible] = useState(false);
-  const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [location, setLocation] = useState<Location | null>(null);
+  const [loadingLocation, setLoadingLocation] = useState(false);
   const navigation = useNavigation();
 
   const totalPrice = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
- 
-  const requestLocationPermission = async () => {
-      let permissionResult;
-      if (Platform.OS === 'ios') {
-          permissionResult = await check(PERMISSIONS.IOS.LOCATION_WHEN_IN_USE);
-          if (permissionResult !== RESULTS.GRANTED) {
-              permissionResult = await request(PERMISSIONS.IOS.LOCATION_WHEN_IN_USE);
-          }
-      } else {
-          permissionResult = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION);
-      }
-  
-      if (permissionResult === RESULTS.GRANTED || permissionResult === PermissionsAndroid.RESULTS.GRANTED) {
-          console.log('You can use the location');
-          return true;
-      } else {
-          console.log('Location permission denied');
-          return false;
-      }
-  };
-  
-  // Example usage in your component:
-  const handleGetLocation = async () => {
-    const granted = await requestLocationPermission();
-    if (!granted) {
-      Alert.alert("Permission Denied", "Please allow location access in settings.", [
-        { text: "Open Settings", onPress: () => openSettings() },
-        { text: "OK" },
-      ]);
-      return;
-    }
-  
-    Geolocation.getCurrentPosition(
-      (position) => {
-        setLocation({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-        });
-        setModalVisible(true);
-      },
-      (error) => {
-        console.log("Location Error: ", error.message);
-        Alert.alert(
-          "Location Error",
-          "Failed to fetch location. Ensure GPS is enabled and try again.",
-          [{ text: "OK" }]
-        );
-        // Navigate to checkout even if location fails (optional)
-        navigation.navigate("Checkout", { location: null as { latitude: number; longitude: number } | null });
+  useEffect(() => {
+    checkLocationPermission();
+  }, []);
 
-      },
-      { enableHighAccuracy: true, timeout: 20000, maximumAge: 10000 }
-    );
+  const checkLocationPermission = async () => {
+    try {
+      let permissionStatus;
+      if (Platform.OS === 'android') {
+        permissionStatus = await check(PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION);
+      } else {
+        permissionStatus = await check(PERMISSIONS.IOS.LOCATION_WHEN_IN_USE);
+      }
+      return permissionStatus === RESULTS.GRANTED;
+    } catch (error) {
+      console.error("Permission check error:", error);
+      return false;
+    }
   };
-  
+
+  const requestLocationPermission = async () => {
+    try {
+      let permissionStatus;
+      if (Platform.OS === 'android') {
+        permissionStatus = await request(PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION);
+      } else {
+        permissionStatus = await request(PERMISSIONS.IOS.LOCATION_WHEN_IN_USE);
+      }
+      
+      if (permissionStatus === RESULTS.GRANTED) {
+        return true;
+      } else if (permissionStatus === RESULTS.DENIED) {
+        Alert.alert(
+          "Permission Required",
+          "Location permission is needed to proceed with checkout",
+          [
+            {
+              text: "Cancel",
+              style: "cancel"
+            },
+            { 
+              text: "Open Settings", 
+              onPress: () => openSettings() 
+            }
+          ]
+        );
+      }
+      return false;
+    } catch (error) {
+      console.error("Permission request error:", error);
+      return false;
+    }
+  };
+
+  const handleGetLocation = async () => {
+    try {
+      setLoadingLocation(true);
+      const hasPermission = await requestLocationPermission();
+      
+      if (!hasPermission) {
+        setLoadingLocation(false);
+        return;
+      }
+
+      Geolocation.getCurrentPosition(
+        (position) => {
+          console.log("Position obtained:", position);
+          const newLocation = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+          };
+          setLocation(newLocation);
+          setLoadingLocation(false);
+          setModalVisible(true);
+        },
+        (error) => {
+          console.error("Location error:", error);
+          setLoadingLocation(false);
+          Alert.alert(
+            "Location Error",
+            
+            
+          );
+        },
+        { 
+          enableHighAccuracy: true, 
+          timeout: 15000, 
+          maximumAge: 10000 
+        }
+      );
+    } catch (error) {
+      console.error("Get location error:", error);
+      setLoadingLocation(false);
+      Alert.alert("Error", "Failed to get location");
+    }
+  };
 
   const handleConfirmLocation = () => {
-    setModalVisible(false);
-    if (location) {
-      navigation.navigate("Checkout", { location });
-    } else {
-      Alert.alert("Location Required", "Please select a valid location before proceeding.");
+    if (!location) {
+      Alert.alert("Error", "No location selected");
+      return;
     }
+    setModalVisible(false);
+    navigation.navigate("Checkout");
   };
-  
 
   if (cart.length === 0) {
     return (
@@ -95,6 +146,7 @@ const CartDisplay = () => {
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Shopping Cart</Text>
+      
       <FlatList
         data={cart}
         keyExtractor={(item) => item._id}
@@ -120,25 +172,44 @@ const CartDisplay = () => {
                 </TouchableOpacity>
               </View>
             </View>
-            <TouchableOpacity onPress={() => removeFromCart(item._id)} style={styles.removeButton}>
+            <TouchableOpacity 
+              onPress={() => removeFromCart(item._id)} 
+              style={styles.removeButton}
+            >
               <Text style={styles.removeButtonText}>✕</Text>
             </TouchableOpacity>
           </View>
         )}
       />
+
       <View style={styles.totalContainer}>
         <Text style={styles.totalText}>Total:</Text>
         <Text style={styles.totalPrice}>₹{totalPrice}</Text>
       </View>
-      <TouchableOpacity style={styles.proceedButton} onPress={handleGetLocation}>
-        <Text style={styles.proceedText}>Proceed to Checkout</Text>
+      
+      <TouchableOpacity 
+        style={[
+          styles.proceedButton,
+          loadingLocation && styles.disabledButton
+        ]} 
+        onPress={handleGetLocation}
+        disabled={loadingLocation}
+      >
+        <Text style={styles.proceedText}>
+          {loadingLocation ? "Getting Location..." : "Proceed to Checkout"}
+        </Text>
       </TouchableOpacity>
 
-      {/* Location Modal 
-      <Modal visible={modalVisible} animationType="slide" transparent={true}>
+      <Modal 
+        visible={modalVisible} 
+        animationType="slide" 
+        transparent={true}
+        onRequestClose={() => setModalVisible(false)}
+      >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Confirm Your Location</Text>
+            
             {location && (
               <MapView
                 style={styles.map}
@@ -149,191 +220,34 @@ const CartDisplay = () => {
                   longitudeDelta: 0.01,
                 }}
               >
-                <Marker coordinate={location} title="Your Location" />
+                <Marker 
+                  coordinate={{
+                    latitude: location.latitude,
+                    longitude: location.longitude
+                  }} 
+                  title="Your Location" 
+                />
               </MapView>
             )}
+            
             <View style={styles.modalButtons}>
-              <TouchableOpacity style={styles.cancelButton} onPress={() => setModalVisible(false)}>
+              <TouchableOpacity 
+                style={styles.cancelButton} 
+                onPress={() => setModalVisible(false)}
+              >
                 <Text style={styles.buttonText}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.confirmButton} onPress={handleConfirmLocation}>
+              
+              <TouchableOpacity 
+                style={styles.confirmButton} 
+                onPress={handleConfirmLocation}
+              >
                 <Text style={styles.buttonText}>Confirm Location</Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
       </Modal>
-    </View>
-  );
-*/
-
-
-
-import React, { useState } from "react";
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, Modal, Alert, Platform, PermissionsAndroid } from "react-native";
-import { useCart } from "../context/Cart";
-import MapView, { Marker } from "react-native-maps";
-import { useNavigation } from "@react-navigation/native";
-import Geolocation from "react-native-geolocation-service";
-import { openSettings } from "react-native-permissions"; 
-import { check, request, PERMISSIONS, RESULTS } from "react-native-permissions";
-interface Location {
-  latitude: number;
-  longitude: number;
-}
-
-
-
-
-const CartDisplay = () => {
-  const { cart, updateQuantity, removeFromCart } = useCart();
-  const [modalVisible, setModalVisible] = useState(false);
-  
-  const [location, setLocation] = useState<Location | null>(null);
-  const navigation = useNavigation();
-
-  const totalPrice = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
-
-  const requestLocationPermission = async () => {
-    try {
-      if (Platform.OS === "ios") {
-        const result = await request(PERMISSIONS.IOS.LOCATION_WHEN_IN_USE);
-        return result === RESULTS.GRANTED;
-      } else {
-        const granted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
-        );
-        return granted === PermissionsAndroid.RESULTS.GRANTED;
-      }
-    } catch (error) {
-      console.error("Permission Error: ", error);
-      return false;
-    }
-  };
-
-  const handleGetLocation = async () => {
-    console.log('Proceed to checkout clicked');
-    const granted = await requestLocationPermission();
-    console.log('Permission granted:', granted);
-  
-    if (!granted) {
-      Alert.alert("Permission Denied", "Please allow location access in settings.", [
-        { text: "Open Settings", onPress: () => openSettings() },
-        { text: "OK" },
-        
-      ]);
-      return;
-      
-    }
-  console.log("hi")
-    Geolocation.getCurrentPosition(
-      (position) => {
-        console.log("Location fetched:", position);
-        if (position.coords) {
-          setLocation({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-          });
-          setModalVisible(true);
-        }
-      },
-      (error) => {
-        console.log("Location Error:", error.message);
-        Alert.alert(
-          "Location Error",
-          "Failed to fetch location. Ensure GPS is enabled and try again.",
-          [{ text: "OK" }]
-        );
-        navigation.navigate("Checkout", { location: null });
-      },
-      { enableHighAccuracy: true, timeout: 20000, maximumAge: 10000 }
-    );
-  }    
-  
-  
-
-  const handleConfirmLocation = () => {
-    setModalVisible(false);
-    if (location) {
-      navigation.navigate("Checkout", { location });
-    } else {
-      Alert.alert("Location Required", "Please select a valid location before proceeding.");
-    }
-  };
-
-  if (cart.length === 0) {
-    return (
-      <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>Your cart is empty</Text>
-      </View>
-    );
-  }
-
-  return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Shopping Cart</Text>
-      <FlatList
-        data={cart}
-        keyExtractor={(item) => item._id}
-        renderItem={({ item }) => (
-          <View style={styles.cartItem}>
-            <Image source={{ uri: item.image }} style={styles.itemImage} />
-            <View style={styles.detailsContainer}>
-              <Text style={styles.itemName}>{item.name}</Text>
-              <Text style={styles.itemPrice}>₹{item.price}</Text>
-              <View style={styles.quantityContainer}>
-                <TouchableOpacity onPress={() => updateQuantity(item._id, Math.max(1, item.quantity - 1))} style={styles.quantityButton}>
-                  <Text style={styles.buttonText}>-</Text>
-                </TouchableOpacity>
-                <Text style={styles.quantity}>{item.quantity}</Text>
-                <TouchableOpacity onPress={() => updateQuantity(item._id, item.quantity + 1)} style={styles.quantityButton}>
-                  <Text style={styles.buttonText}>+</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-            <TouchableOpacity onPress={() => removeFromCart(item._id)} style={styles.removeButton}>
-              <Text style={styles.removeButtonText}>✕</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      />
-      <View style={styles.totalContainer}>
-        <Text style={styles.totalText}>Total:</Text>
-        <Text style={styles.totalPrice}>₹{totalPrice}</Text>
-      </View>
-      <TouchableOpacity style={styles.proceedButton} onPress={handleGetLocation}>
-        <Text style={styles.proceedText}>Proceed to Checkout</Text>
-      </TouchableOpacity>
-
-      <Modal visible={modalVisible} animationType="slide" transparent={true}>
-  <View style={styles.modalContainer}>
-    <View style={styles.modalContent}>
-      <Text style={styles.modalTitle}>Confirm Your Location</Text>
-      {location && (
-        <MapView
-          style={styles.map}
-          initialRegion={{
-            latitude: location.latitude,
-            longitude: location.longitude,
-            latitudeDelta: 0.01,
-            longitudeDelta: 0.01,
-          }}
-        >
-          <Marker coordinate={location} title="Your Location" />
-        </MapView>
-      )}
-      <View style={styles.modalButtons}>
-        <TouchableOpacity style={styles.cancelButton} onPress={() => setModalVisible(false)}>
-          <Text style={styles.buttonText}>Cancel</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.confirmButton} onPress={handleConfirmLocation}>
-          <Text style={styles.buttonText}>Confirm Location</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  </View>
-</Modal>
-
     </View>
   );
 };
@@ -449,6 +363,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 15,
   },
+  disabledButton: {
+    backgroundColor: "#888",
+  },
   proceedText: {
     color: "white",
     fontSize: 18,
@@ -464,7 +381,8 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     padding: 20,
     borderRadius: 10,
-    width: "80%",
+    width: "90%",
+    maxWidth: 400,
     alignItems: "center",
   },
   modalTitle: {
@@ -473,28 +391,32 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   map: {
-    width: 250,
+    width: '100%',
     height: 200,
+    marginVertical: 10,
+    borderRadius: 8,
   },
   modalButtons: {
     flexDirection: "row",
     marginTop: 15,
+    justifyContent: 'space-between',
+    width: '100%',
   },
   cancelButton: {
     backgroundColor: "#ddd",
     padding: 10,
     borderRadius: 8,
+    flex: 1,
     marginRight: 10,
+    alignItems: 'center',
   },
   confirmButton: {
     backgroundColor: "green",
     padding: 10,
     borderRadius: 8,
+    flex: 1,
+    alignItems: 'center',
   },
 });
 
 export default CartDisplay;
-
-
-
-

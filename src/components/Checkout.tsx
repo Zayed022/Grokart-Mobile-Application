@@ -1,21 +1,14 @@
-import React from 'react';
-import { View, Text } from 'react-native';
-import { useRoute } from '@react-navigation/native';
+import React, { Component } from 'react'
+import { Text, View } from 'react-native'
 
-const Checkout = () => {
-  const route = useRoute();
-  const location = route.params?.location;
+export class Checkout extends Component {
+  render() {
+    return (
+      <View>
+        <Text> textInComponent </Text>
+      </View>
+    )
+  }
+}
 
-  return (
-    <View>
-      <Text>Checkout Screen</Text>
-      {location && (
-        <Text>
-          Location: Latitude {location.latitude}, Longitude {location.longitude}
-        </Text>
-      )}
-    </View>
-  );
-};
-
-export default Checkout;
+export default Checkout

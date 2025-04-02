@@ -4,6 +4,7 @@ import Navbar from './Navbar';
 import Subcategory from './Subcategory';
 import CsCards from './Subcategory';
 import Items from './Items';
+import AddressDetails from './AddressDetails';
 
 export class Home extends Component {
   render() {
@@ -14,7 +15,9 @@ export class Home extends Component {
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <CsCards />
           <Items />
+          <AddressDetails/>
           <Text style={styles.text}>Home Component </Text>
+          
         </ScrollView>
       </View>
     );
