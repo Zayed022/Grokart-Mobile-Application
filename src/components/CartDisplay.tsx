@@ -13,7 +13,7 @@ import {
 import { useCart } from "../context/Cart";
 import MapView, { Marker } from "react-native-maps";
 import { useNavigation } from "@react-navigation/native";
-import Geolocation from 'react-native-geolocation-service';
+import Geolocation from '@react-native-community/geolocation';
 import { check, request, PERMISSIONS, RESULTS, openSettings } from 'react-native-permissions';
 
 interface Location {
@@ -26,6 +26,7 @@ const CartDisplay = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [location, setLocation] = useState<Location | null>(null);
   const [loadingLocation, setLoadingLocation] = useState(false);
+  
   const navigation = useNavigation();
 
   const totalPrice = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
@@ -50,81 +51,67 @@ const CartDisplay = () => {
   };
 
   const requestLocationPermission = async () => {
-    try {
-      let permissionStatus;
-      if (Platform.OS === 'android') {
+    let permissionStatus;
+    
+    if (Platform.OS === 'android') {
+      permissionStatus = await check(PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION);
+      if (permissionStatus !== RESULTS.GRANTED) {
         permissionStatus = await request(PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION);
-      } else {
+      }
+    } else {
+      permissionStatus = await check(PERMISSIONS.IOS.LOCATION_WHEN_IN_USE);
+      if (permissionStatus !== RESULTS.GRANTED) {
         permissionStatus = await request(PERMISSIONS.IOS.LOCATION_WHEN_IN_USE);
       }
-      
-      if (permissionStatus === RESULTS.GRANTED) {
-        return true;
-      } else if (permissionStatus === RESULTS.DENIED) {
-        Alert.alert(
-          "Permission Required",
-          "Location permission is needed to proceed with checkout",
-          [
-            {
-              text: "Cancel",
-              style: "cancel"
-            },
-            { 
-              text: "Open Settings", 
-              onPress: () => openSettings() 
-            }
-          ]
-        );
-      }
-      return false;
-    } catch (error) {
-      console.error("Permission request error:", error);
-      return false;
     }
+  
+    return permissionStatus === RESULTS.GRANTED;
   };
 
   const handleGetLocation = async () => {
     try {
       setLoadingLocation(true);
+  
+      // Check permissions
       const hasPermission = await requestLocationPermission();
-      
       if (!hasPermission) {
         setLoadingLocation(false);
         return;
       }
-
+  
+      // Request location
       Geolocation.getCurrentPosition(
         (position) => {
-          console.log("Position obtained:", position);
-          const newLocation = {
+          console.log("Location Fetched ")
+          setLocation({
             latitude: position.coords.latitude,
-            longitude: position.coords.longitude
-          };
-          setLocation(newLocation);
+            longitude: position.coords.longitude,
+          });
           setLoadingLocation(false);
           setModalVisible(true);
         },
         (error) => {
           console.error("Location error:", error);
           setLoadingLocation(false);
+          
+          let errorMessage = "Could not get location.";
+          if (error.code === 3) errorMessage = "Location request timed out. Check your connection.";
+          if (error.code === 4) errorMessage = "App context lost. Restart the app.";
+  
           Alert.alert(
-            "Location Error",
-            
-            
+            "Error",
+            errorMessage,
+            [{ text: "OK", onPress: () => setModalVisible(false) }]
           );
         },
-        { 
-          enableHighAccuracy: true, 
-          timeout: 15000, 
-          maximumAge: 10000 
-        }
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
       );
     } catch (error) {
-      console.error("Get location error:", error);
       setLoadingLocation(false);
-      Alert.alert("Error", "Failed to get location");
+      Alert.alert("Error", "An unexpected error occurred.");
     }
   };
+  
 
   const handleConfirmLocation = () => {
     if (!location) {
