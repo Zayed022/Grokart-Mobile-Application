@@ -15,6 +15,7 @@ import MapView, { Marker } from "react-native-maps";
 import { useNavigation } from "@react-navigation/native";
 import Geolocation from '@react-native-community/geolocation';
 import { check, request, PERMISSIONS, RESULTS, openSettings } from 'react-native-permissions';
+import axios from "axios";
 
 interface Location {
   latitude: number;
@@ -113,13 +114,41 @@ const CartDisplay = () => {
   };
   
 
-  const handleConfirmLocation = () => {
+  const handleConfirmLocation = async () => {
     if (!location) {
       Alert.alert("Error", "No location selected");
       return;
     }
-    setModalVisible(false);
-    navigation.navigate("Checkout");
+  
+    try {
+      const response = await axios.get(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${location.latitude}&lon=${location.longitude}`
+      );
+  
+      const address = response.data.display_name;
+  
+      Alert.alert(
+        "Confirm Your Location",
+        `Your location: ${address}`,
+        [
+          {
+            text: "Cancel",
+            style: "cancel",
+            onPress: () => console.log("Cancel Pressed"),
+          },
+          {
+            text: "Continue",
+            onPress: () => {
+              setModalVisible(false);
+              navigation.navigate("Checkout", { address, location });
+            },
+          },
+        ]
+      );
+    } catch (error) {
+      console.error("Error fetching address:", error);
+      Alert.alert("Error", "Failed to get address. Try again.");
+    }
   };
 
   if (cart.length === 0) {

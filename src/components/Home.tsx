@@ -1,12 +1,14 @@
 import React, { Component } from 'react';
-import { Text, View, ScrollView, StyleSheet } from 'react-native';
+import { Text, View, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import Navbar from './Navbar';
 import Subcategory from './Subcategory';
 import CsCards from './Subcategory';
 import Items from './Items';
 import AddressDetails from './AddressDetails';
 
+
 export class Home extends Component {
+
   render() {
     return (
       <View style={styles.container}>
@@ -17,6 +19,7 @@ export class Home extends Component {
           <Items />
           <AddressDetails/>
           <Text style={styles.text}>Home Component </Text>
+          
           
         </ScrollView>
       </View>
