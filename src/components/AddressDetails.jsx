@@ -1,7 +1,19 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+} from "react-native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 
 const AddressDetails = () => {
+  const route = useRoute();
+  const navigation = useNavigation();
+
+  const { address, location } = route.params || {};
+
   const [houseNo, setHouseNo] = useState("");
   const [blockNo, setBlockNo] = useState("");
   const [landmark, setLandmark] = useState("");
@@ -9,13 +21,25 @@ const AddressDetails = () => {
   const [receiverName, setReceiverName] = useState("");
   const [phone, setPhone] = useState("");
 
+  const handlePayment = () => {
+    navigation.navigate("Payment",{address,location});
+  };
+
+  const isFormComplete = () => {
+    return (
+      houseNo.trim() !== "" &&
+      blockNo.trim() !== "" &&
+      receiverName.trim() !== "" &&
+      phone.trim().length === 10
+    );
+  };
+
   return (
     <View style={styles.container}>
       {/* Saved Location */}
       <View style={styles.savedLocationCard}>
         <View style={{ flex: 1 }}>
-          <Text style={styles.locationText}>Shahid Bhagat Singh Road</Text>
-          <Text style={styles.subText}>16, Cusrow Baug Colony, Apollo...</Text>
+          <Text style={styles.locationText}>{address || "No Address Found"}</Text>
         </View>
         <TouchableOpacity>
           <Text style={styles.changeText}>Change</Text>
@@ -48,10 +72,20 @@ const AddressDetails = () => {
         {["Home", "Work", "Other"].map((label) => (
           <TouchableOpacity
             key={label}
-            style={[styles.labelButton, selectedLabel === label && styles.selectedLabel]}
+            style={[
+              styles.labelButton,
+              selectedLabel === label && styles.selectedLabel,
+            ]}
             onPress={() => setSelectedLabel(label)}
           >
-            <Text style={[styles.labelText, selectedLabel === label && { color: "white" }]}>{label}</Text>
+            <Text
+              style={[
+                styles.labelText,
+                selectedLabel === label && { color: "white" },
+              ]}
+            >
+              {label}
+            </Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -70,10 +104,18 @@ const AddressDetails = () => {
         value={phone}
         onChangeText={setPhone}
         keyboardType="phone-pad"
+        maxLength={10}
       />
 
       {/* Save Button */}
-      <TouchableOpacity style={styles.saveButton}>
+      <TouchableOpacity
+        style={[
+          styles.saveButton,
+          !isFormComplete() && styles.disabledButton,
+        ]}
+        onPress={handlePayment}
+        disabled={!isFormComplete()}
+      >
         <Text style={styles.saveButtonText}>Save & Continue</Text>
       </TouchableOpacity>
     </View>
@@ -146,6 +188,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
     marginTop: 15,
+  },
+  disabledButton: {
+    backgroundColor: "#ccc",
   },
   saveButtonText: {
     color: "white",

@@ -11,7 +11,7 @@ import { useCart } from "../context/Cart";
 import { useNavigation, useRoute } from "@react-navigation/native";
 
 const Checkout = () => {
-  const { cart, clearCart } = useCart();
+  const { cart } = useCart();
   const navigation = useNavigation();
   const route = useRoute();
 
@@ -28,8 +28,8 @@ const Checkout = () => {
       "🎉 Order Placed!",
       `Your order has been placed successfully.\n\n📍 Delivery Address:\n${address}`,
       [{ text: "OK", onPress: () => {
-        clearCart();
-        navigation.navigate("Payment");
+        
+        navigation.navigate("AddressDetails",{address,location});
       }}]
     );
   };
