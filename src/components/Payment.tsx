@@ -43,17 +43,14 @@ const PaymentScreen = () => {
 
     try {
       const res = await axios.post('https://grokart-2.onrender.com/api/v1/order/create-order', {
-        userId,
-        cartItems,
-        totalAmount: totalPrice,
-        paymentMethod: 'COD',
-        address,
-        email
+        
+        amount: totalPrice,
+        currency:"INR",
       });
 
       if (res.data.success) {
         Alert.alert('Success', 'Order placed successfully with Cash on Delivery');
-        navigation.navigate('OrderSummary', { order: res.data.order });
+       // navigation.navigate('OrderSummary', { order: res.data.order });
       }
     } catch (error) {
       console.log(error);
@@ -62,58 +59,52 @@ const PaymentScreen = () => {
   };
 
   const handleOnlinePayment = async () => {
-    if (!userId) return;
-
     try {
-      const order = await axios.post('https://grokart-2.onrender.com/api/v1/order/create-order', {
-        amount: totalPrice * 100
-      });
-
-      const options = {
-        description: 'Payment for your order',
-        image: 'https://your-logo-url.com/logo.png',
+      // Step 1: Create order from backend
+      const orderResponse = await axios.post('https://grokart-2.onrender.com/api/v1/order/create-order', {
+        amount: totalPrice, // assuming backend handles *100 to paise
         currency: 'INR',
-        key: 'rzp_test_0dlBqxH635NvB4',
-        amount: order.data.amount,
-        name: 'Quick Commerce App',
-        order_id: order.data.id,
+      });
+  
+      const { id: order_id, amount, currency } = orderResponse.data;
+  
+      // Step 2: Razorpay Options
+      const options = {
+        description: 'A payment to GroKart: 15 minutes Delivery App',
+        image: 'https://your-domain.com/logo.png',
+        currency,
+        key: 'rzp_test_0dlBqxH635NvB4', // replace with live key in production
+        amount,
+        name: 'Grokart',
+        order_id,
         prefill: {
-          email: email,
-          contact: '',
-          name: 'User'
+          email: 'zayedans022@gmail.com',
+          contact: '7498881947',
+          name: 'Zayed Ansari',
         },
-        theme: { color: '#53a20e' }
+        theme: { color: '#3399cc' },
       };
-
+  
+      // Step 3: Open Razorpay Checkout
       RazorpayCheckout.open(options)
-        .then(async (data: any) => {
-          await axios.post('https://grokart-2.onrender.com/api/payment/verify-payment', {
-            razorpay_order_id: data.razorpay_order_id,
-            razorpay_payment_id: data.razorpay_payment_id,
-            razorpay_signature: data.razorpay_signature
-          });
-
-          const placedOrder = await axios.post('https://grokart-2.onrender.com/api/v1/order/create-order', {
-            userId,
-            items: cartItems,
-            totalAmount: totalPrice,
-            paymentId: data.razorpay_payment_id,
-            paymentMethod: 'UPI',
-            deliveryAddress: address
-          });
-
-          Alert.alert('Success', 'Order placed successfully');
-          navigation.navigate('OrderSummary', { order: placedOrder.data.order });
+        .then((data) => {
+          // No verification step
+          Alert.alert('✅ Payment Successful', `Payment ID: ${data.razorpay_payment_id}`);
+          // Navigate to confirmation screen or update UI
+          //navigation.navigate('OrderSummary', {
+            //orderId: order_id,
+          //});
         })
-        .catch((error: any) => {
-          console.log(error);
-          Alert.alert('Payment Error', 'Payment was not successful');
+        .catch((error) => {
+          console.log('Payment failed:', error);
+          Alert.alert('❌ Payment Failed', 'Your payment could not be completed.');
         });
     } catch (err) {
-      console.log(err);
-      Alert.alert('Error', 'Unable to process payment');
+      console.error('Error initiating payment:', err);
+      Alert.alert('Error', 'Unable to initiate payment. Please try again later.');
     }
   };
+  
 
   return (
     <View style={styles.container}>
