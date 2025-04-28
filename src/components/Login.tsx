@@ -28,6 +28,8 @@ const Login = () => {
       if (data.token) {
         await AsyncStorage.setItem("token", data.token);
         await AsyncStorage.setItem("userId", data.user._id);
+        await AsyncStorage.setItem('user', JSON.stringify(data.user));
+
         navigation.navigate("Home");
       } else {
         Alert.alert("Login failed", "Token not received.");

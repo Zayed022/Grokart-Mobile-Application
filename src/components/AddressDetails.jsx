@@ -5,37 +5,56 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
+  ScrollView,
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 
 const AddressDetails = () => {
-  const route = useRoute();
   const navigation = useNavigation();
-
+  const route = useRoute();
+  
   const { address, location } = route.params || {};
 
-  const [houseNo, setHouseNo] = useState("");
-  const [blockNo, setBlockNo] = useState("");
-  const [landmark, setLandmark] = useState("");
-  const [selectedLabel, setSelectedLabel] = useState("Home");
-  const [receiverName, setReceiverName] = useState("");
-  const [phone, setPhone] = useState("");
+  const [addressDetails, setAddressDetails] = useState({
+    houseNumber: "",
+    floor: "",
+    buildingName: "",
+    landmark: "",
+    recipientName: "",
+    recipientPhoneNumber: "",
+  });
 
-  const handlePayment = () => {
-    navigation.navigate("Payment",{address,location});
+  const handleChange = (name, value) => {
+    setAddressDetails((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
   const isFormComplete = () => {
     return (
-      houseNo.trim() !== "" &&
-      blockNo.trim() !== "" &&
-      receiverName.trim() !== "" &&
-      phone.trim().length === 10
+      addressDetails.houseNumber.trim() !== "" &&
+      addressDetails.floor.trim() !== "" &&
+      addressDetails.recipientName.trim() !== "" &&
+      addressDetails.recipientPhoneNumber.trim().length === 10
     );
   };
 
+  const handleSubmit = () => {
+    navigation.navigate("Payment", {
+      address,
+      location,
+      addressDetails: {
+        ...addressDetails,
+        city: "Bhiwandi",
+        state: "Maharashtra",
+        pincode: "421302",
+      },
+    });
+  };
+
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
       {/* Saved Location */}
       <View style={styles.savedLocationCard}>
         <View style={{ flex: 1 }}>
@@ -47,78 +66,36 @@ const AddressDetails = () => {
       </View>
 
       {/* Input Fields */}
-      <TextInput
-        style={styles.input}
-        placeholder="House No. & Floor*"
-        value={houseNo}
-        onChangeText={setHouseNo}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Building & Block No.*"
-        value={blockNo}
-        onChangeText={setBlockNo}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Landmark & Area Name (Optional)"
-        value={landmark}
-        onChangeText={setLandmark}
-      />
-
-      {/* Address Label Selection */}
-      <Text style={styles.labelTitle}>Add Address Label</Text>
-      <View style={styles.labelContainer}>
-        {["Home", "Work", "Other"].map((label) => (
-          <TouchableOpacity
-            key={label}
-            style={[
-              styles.labelButton,
-              selectedLabel === label && styles.selectedLabel,
-            ]}
-            onPress={() => setSelectedLabel(label)}
-          >
-            <Text
-              style={[
-                styles.labelText,
-                selectedLabel === label && { color: "white" },
-              ]}
-            >
-              {label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {/* Receiver Details */}
-      <Text style={styles.labelTitle}>Receiver Details</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Full Name"
-        value={receiverName}
-        onChangeText={setReceiverName}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Phone Number"
-        value={phone}
-        onChangeText={setPhone}
-        keyboardType="phone-pad"
-        maxLength={10}
-      />
+      {[
+        { name: "houseNumber", placeholder: "House No. *" },
+        { name: "floor", placeholder: "Floor *" },
+        { name: "buildingName", placeholder: "Building & Block No." },
+        { name: "landmark", placeholder: "Landmark & Area Name (Optional)" },
+        { name: "recipientName", placeholder: "Recipient Name *" },
+        { name: "recipientPhoneNumber", placeholder: "Recipient Phone Number *" },
+      ].map((field) => (
+        <TextInput
+          key={field.name}
+          style={styles.input}
+          placeholder={field.placeholder}
+          value={addressDetails[field.name]}
+          onChangeText={(text) => handleChange(field.name, text)}
+          keyboardType={
+            field.name === "recipientPhoneNumber" ? "phone-pad" : "default"
+          }
+          maxLength={field.name === "recipientPhoneNumber" ? 10 : undefined}
+        />
+      ))}
 
       {/* Save Button */}
       <TouchableOpacity
-        style={[
-          styles.saveButton,
-          !isFormComplete() && styles.disabledButton,
-        ]}
-        onPress={handlePayment}
+        style={[styles.saveButton, !isFormComplete() && styles.disabledButton]}
+        onPress={handleSubmit}
         disabled={!isFormComplete()}
       >
         <Text style={styles.saveButtonText}>Save & Continue</Text>
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 };
 
@@ -126,9 +103,7 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: "white",
     padding: 20,
-    borderRadius: 12,
-    elevation: 5,
-    margin: 15,
+    flexGrow: 1,
   },
   savedLocationCard: {
     backgroundColor: "#6C41EC",
@@ -142,10 +117,6 @@ const styles = StyleSheet.create({
     color: "white",
     fontWeight: "bold",
   },
-  subText: {
-    color: "white",
-    fontSize: 12,
-  },
   changeText: {
     color: "#FFD700",
     fontWeight: "bold",
@@ -157,34 +128,9 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 10,
   },
-  labelTitle: {
-    fontSize: 14,
-    fontWeight: "bold",
-    marginVertical: 10,
-  },
-  labelContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  labelButton: {
-    flex: 1,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: "#6C41EC",
-    borderRadius: 8,
-    alignItems: "center",
-    marginHorizontal: 5,
-  },
-  selectedLabel: {
-    backgroundColor: "#6C41EC",
-  },
-  labelText: {
-    color: "#6C41EC",
-    fontWeight: "bold",
-  },
   saveButton: {
     backgroundColor: "#FF4D6D",
-    padding: 12,
+    padding: 15,
     borderRadius: 8,
     alignItems: "center",
     marginTop: 15,
