@@ -13,6 +13,7 @@ import Search from '../components/Search';
 import Checkout from '../components/Checkout';
 import AddressDetails from '../components/AddressDetails';
 import Payment from '../components/Payment';
+import PaymentSuccess from '../components/PaymentSuccess';
 
 const Stack = createStackNavigator();
 
@@ -30,6 +31,7 @@ const AppNavigator = () => {
       <Stack.Screen name="AddressDetails" component={AddressDetails} />
       <Stack.Screen name="Checkout" component={Checkout} />
       <Stack.Screen name="Payment" component={Payment} />
+      <Stack.Screen name="PaymentSuccess" component={PaymentSuccess} />
 
     </Stack.Navigator>
   );

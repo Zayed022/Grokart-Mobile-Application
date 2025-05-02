@@ -149,7 +149,7 @@ const PaymentScreen = () => {
             name: item.name,
             price: item.price,
           })),
-          totalAmount: totalPrice,
+          totalAmount: Number(totalPrice),
           address,
           addressDetails,
           notes: {},
@@ -157,10 +157,16 @@ const PaymentScreen = () => {
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
+      console.log('COD Order Response:', response.data);
+
       clearCart();
-      //navigation.navigate('PaymentSuccess', { paymentDetails: response.data, address, addressDetails });
-    } catch (error) {
-      console.log('COD Payment Failed:', error);
+      navigation.navigate('PaymentSuccess', { paymentDetails: response.data.order ,address, addressDetails });
+    } catch (error: any) {
+      if (error instanceof Error) {
+        console.log('COD Payment Failed:', error.message);
+      } else {
+        console.log('COD Payment Failed:', error);
+      }
       Alert.alert('COD Payment Failed', 'Please try again.');
     } finally {
       setLoading(false);
