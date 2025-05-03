@@ -26,6 +26,14 @@ import { CartProvider } from './src/context/Cart';
 import 'react-native-gesture-handler';
 import 'react-native-reanimated';
 
+import SplashScreen from 'react-native-splash-screen';
+import { useEffect } from 'react';
+
+useEffect(() => {
+  SplashScreen.hide();
+}, []);
+
+
 const App = () => {
   return (
     <CartProvider>

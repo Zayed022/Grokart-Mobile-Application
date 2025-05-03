@@ -2,7 +2,7 @@ import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 import { View, Text, Image, TouchableOpacity, ScrollView, ActivityIndicator, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-
+import { CategorySkeleton } from './CategorySkeleton';
 // Define TypeScript interfaces
 interface Subcategory {
   _id: string;
@@ -45,8 +45,9 @@ const CsCards: React.FC = () => {
   }, []);
 
   if (loading) {
-    return <ActivityIndicator size="large" color="#0000ff" style={styles.loader} />;
+    return <CategorySkeleton />;
   }
+  
   const handleCategoryRedirect = (subcategory: string) => {
     navigation.navigate("Category", { subCategory: subcategory });
   };

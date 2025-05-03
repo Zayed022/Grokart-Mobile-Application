@@ -4,6 +4,7 @@ import {
   ActivityIndicator, StyleSheet, Dimensions 
 } from "react-native";
 import { useCart } from "../context/Cart";
+import ProductSkeleton from "./ProductSkeleton";
 
 const screenWidth = Dimensions.get("window").width;
 
@@ -11,6 +12,7 @@ interface Product {
   _id: string;
   name: string;
   price: number;
+  description:string,
   category: string;
   subCategory?: string;
   image: string;
@@ -46,6 +48,7 @@ const Items = () => {
         <Image source={{ uri: item.image || "https://via.placeholder.com/150" }} style={styles.image} />
         
         <View style={styles.infoContainer}>
+          <Text >{item.description}</Text>
           <Text style={styles.productName} numberOfLines={2}>{item.name}</Text>
           <Text style={styles.price}>₹{item.price}</Text>
 
@@ -71,12 +74,18 @@ const Items = () => {
   };
 
   if (loading) {
+    const skeletonArray = Array.from({ length: 6 });
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#ff4d4d" />
-      </View>
+      <FlatList
+        data={skeletonArray}
+        keyExtractor={(_, index) => index.toString()}
+        renderItem={() => <ProductSkeleton />}
+        numColumns={2}
+        columnWrapperStyle={styles.row}
+      />
     );
   }
+  
 
   if (products.length === 0) {
     return (
