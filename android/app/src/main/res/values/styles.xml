@@ -1,9 +1,10 @@
 <resources>
+    <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
+        <!-- Main app theme -->
+    </style>
 
-    <!-- Base application theme. -->
-   <style name="SplashTheme" parent="Theme.AppCompat.Light.NoActionBar">
-    <item name="android:windowBackground">@layout/launch_screen</item>
-</style>
-
-
+    <style name="SplashTheme" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="android:windowBackground">@layout/launch_screen</item>
+        <item name="android:statusBarColor">#F58A07</item>
+    </style>
 </resources>
