@@ -1,20 +1,26 @@
-import React, { useEffect, useState } from "react";
-import { 
-  View, 
-  Text, 
-  FlatList, 
-  TouchableOpacity, 
-  StyleSheet, 
-  Image, 
-  Modal, 
-  Alert,
-  Platform 
+import React, { useEffect, useState, useMemo, useCallback } from "react";
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+  Image,
+  Modal,
+  ActivityIndicator,
+  Platform,
 } from "react-native";
 import { useCart } from "../context/Cart";
 import MapView, { Marker } from "react-native-maps";
 import { useNavigation } from "@react-navigation/native";
-import Geolocation from '@react-native-community/geolocation';
-import { check, request, PERMISSIONS, RESULTS, openSettings } from 'react-native-permissions';
+import Geolocation from "@react-native-community/geolocation";
+import {
+  check,
+  request,
+  PERMISSIONS,
+  RESULTS,
+  openSettings,
+} from "react-native-permissions";
 import axios from "axios";
 
 interface Location {
@@ -22,24 +28,96 @@ interface Location {
   longitude: number;
 }
 
+interface CartItemProps {
+  item: any;
+  updateQuantity: (id: string, quantity: number) => void;
+  removeFromCart: (id: string) => void;
+}
+
+const CartItem = React.memo(
+  ({ item, updateQuantity, removeFromCart }: CartItemProps) => {
+    const handleDecrease = useCallback(() => {
+      updateQuantity(item._id, Math.max(1, item.quantity - 1));
+    }, [item._id, item.quantity, updateQuantity]);
+
+    const handleIncrease = useCallback(() => {
+      updateQuantity(item._id, item.quantity + 1);
+    }, [item._id, item.quantity, updateQuantity]);
+
+    const handleRemove = useCallback(() => {
+      removeFromCart(item._id);
+    }, [item._id, removeFromCart]);
+
+    return (
+      <View style={styles.cartItem}>
+        <Image
+          source={{ uri: item.image }}
+          style={styles.itemImage}
+          resizeMode="cover"
+        />
+        <View style={styles.detailsContainer}>
+          <Text style={styles.itemName} numberOfLines={1} ellipsizeMode="tail">
+            {item.name}
+          </Text>
+          <Text style={styles.itemPrice}>₹{item.price}</Text>
+          <View style={styles.quantityContainer}>
+            <TouchableOpacity
+              onPress={handleDecrease}
+              style={styles.quantityButton}
+              activeOpacity={0.7}
+              accessibilityLabel="Decrease quantity"
+              accessibilityHint={`Decrease the quantity of ${item.name}`}
+            >
+              <Text style={styles.buttonText}>-</Text>
+            </TouchableOpacity>
+            <Text style={styles.quantity}>{item.quantity}</Text>
+            <TouchableOpacity
+              onPress={handleIncrease}
+              style={styles.quantityButton}
+              activeOpacity={0.7}
+              accessibilityLabel="Increase quantity"
+              accessibilityHint={`Increase the quantity of ${item.name}`}
+            >
+              <Text style={styles.buttonText}>+</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+        <TouchableOpacity
+          onPress={handleRemove}
+          style={styles.removeButton}
+          activeOpacity={0.7}
+          accessibilityLabel={`Remove ${item.name} from cart`}
+          accessibilityHint="Removes this item from your cart"
+        >
+          <Text style={styles.removeButtonText}>✕</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+);
+
 const CartDisplay = () => {
   const { cart, updateQuantity, removeFromCart } = useCart();
   const [modalVisible, setModalVisible] = useState(false);
   const [location, setLocation] = useState<Location | null>(null);
   const [loadingLocation, setLoadingLocation] = useState(false);
-  
+  const [locationError, setLocationError] = useState("");
+  const [addressError, setAddressError] = useState("");
   const navigation = useNavigation();
 
-  const totalPrice = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  // Memoize totalPrice calculation
+  const totalPrice = useMemo(() => {
+    return cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  }, [cart]);
 
   useEffect(() => {
     checkLocationPermission();
   }, []);
 
-  const checkLocationPermission = async () => {
+  const checkLocationPermission = useCallback(async () => {
     try {
       let permissionStatus;
-      if (Platform.OS === 'android') {
+      if (Platform.OS === "android") {
         permissionStatus = await check(PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION);
       } else {
         permissionStatus = await check(PERMISSIONS.IOS.LOCATION_WHEN_IN_USE);
@@ -49,12 +127,12 @@ const CartDisplay = () => {
       console.error("Permission check error:", error);
       return false;
     }
-  };
+  }, []);
 
-  const requestLocationPermission = async () => {
+  const requestLocationPermission = useCallback(async () => {
     let permissionStatus;
-    
-    if (Platform.OS === 'android') {
+
+    if (Platform.OS === "android") {
       permissionStatus = await check(PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION);
       if (permissionStatus !== RESULTS.GRANTED) {
         permissionStatus = await request(PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION);
@@ -65,91 +143,85 @@ const CartDisplay = () => {
         permissionStatus = await request(PERMISSIONS.IOS.LOCATION_WHEN_IN_USE);
       }
     }
-  
-    return permissionStatus === RESULTS.GRANTED;
-  };
 
-  const handleGetLocation = async () => {
-    try {
-      setLoadingLocation(true);
-  
-      // Check permissions
-      const hasPermission = await requestLocationPermission();
-      if (!hasPermission) {
-        setLoadingLocation(false);
-        return;
-      }
-  
-      // Request location
-      Geolocation.getCurrentPosition(
-        (position) => {
-          console.log("Location Fetched ")
-          setLocation({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-          });
-          setLoadingLocation(false);
-          setModalVisible(true);
-        },
-        (error) => {
-          console.error("Location error:", error);
-          setLoadingLocation(false);
-          
-          let errorMessage = "Could not get location.";
-          if (error.code === 3) errorMessage = "Location request timed out. Check your connection.";
-          if (error.code === 4) errorMessage = "App context lost. Restart the app.";
-  
-          Alert.alert(
-            "Error",
-            errorMessage,
-            [{ text: "OK", onPress: () => setModalVisible(false) }]
-          );
-        },
-        { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
+    if (permissionStatus === RESULTS.DENIED || permissionStatus === RESULTS.BLOCKED) {
+      setLocationError(
+        "Location permission is required to proceed. Please enable it in settings."
       );
-    } catch (error) {
-      setLoadingLocation(false);
-      Alert.alert("Error", "An unexpected error occurred.");
+      return false;
     }
-  };
-  
 
-  const handleConfirmLocation = async () => {
-    if (!location) {
-      Alert.alert("Error", "No location selected");
+    return permissionStatus === RESULTS.GRANTED;
+  }, []);
+
+  const handleOpenSettings = useCallback(() => {
+    openSettings().catch(() => console.warn("Cannot open settings"));
+  }, []);
+
+  const handleGetLocation = useCallback(async () => {
+    setLoadingLocation(true);
+    setLocationError("");
+    setAddressError("");
+
+    const hasPermission = await requestLocationPermission();
+    if (!hasPermission) {
+      setLoadingLocation(false);
       return;
     }
-  
+
+    Geolocation.getCurrentPosition(
+      (position) => {
+        console.log("Location Fetched");
+        setLocation({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        });
+        setLoadingLocation(false);
+        setModalVisible(true);
+      },
+      (error) => {
+        console.error("Location error:", error);
+        setLoadingLocation(false);
+        let errorMessage = "Could not get location.";
+        if (error.code === 3) errorMessage = "Location request timed out. Check your connection.";
+        if (error.code === 4) errorMessage = "App context lost. Restart the app.";
+        setLocationError(errorMessage);
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
+    );
+  }, [requestLocationPermission]);
+
+  const handleConfirmLocation = useCallback(async () => {
+    if (!location) {
+      setAddressError("No location selected");
+      return;
+    }
+
     try {
       const response = await axios.get(
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${location.latitude}&lon=${location.longitude}`
       );
-  
+
       const address = response.data.display_name;
-  
-      Alert.alert(
-        "Confirm Your Location",
-        `Your location: ${address}`,
-        [
-          {
-            text: "Cancel",
-            style: "cancel",
-            onPress: () => console.log("Cancel Pressed"),
-          },
-          {
-            text: "Continue",
-            onPress: () => {
-              setModalVisible(false);
-              navigation.navigate("Checkout", { address, location });
-            },
-          },
-        ]
-      );
+
+      setModalVisible(false);
+      navigation.navigate("Checkout", { address, location });
     } catch (error) {
       console.error("Error fetching address:", error);
-      Alert.alert("Error", "Failed to get address. Try again.");
+      setAddressError("Failed to get address. Try again.");
     }
-  };
+  }, [location, navigation]);
+
+  const renderItem = useCallback(
+    ({ item }) => (
+      <CartItem
+        item={item}
+        updateQuantity={updateQuantity}
+        removeFromCart={removeFromCart}
+      />
+    ),
+    [updateQuantity, removeFromCart]
+  );
 
   if (cart.length === 0) {
     return (
@@ -162,70 +234,72 @@ const CartDisplay = () => {
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Shopping Cart</Text>
-      
+
       <FlatList
         data={cart}
         keyExtractor={(item) => item._id}
-        renderItem={({ item }) => (
-          <View style={styles.cartItem}>
-            <Image source={{ uri: item.image }} style={styles.itemImage} />
-            <View style={styles.detailsContainer}>
-              <Text style={styles.itemName}>{item.name}</Text>
-              <Text style={styles.itemPrice}>₹{item.price}</Text>
-              <View style={styles.quantityContainer}>
-                <TouchableOpacity
-                  onPress={() => updateQuantity(item._id, Math.max(1, item.quantity - 1))}
-                  style={styles.quantityButton}
-                >
-                  <Text style={styles.buttonText}>-</Text>
-                </TouchableOpacity>
-                <Text style={styles.quantity}>{item.quantity}</Text>
-                <TouchableOpacity
-                  onPress={() => updateQuantity(item._id, item.quantity + 1)}
-                  style={styles.quantityButton}
-                >
-                  <Text style={styles.buttonText}>+</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-            <TouchableOpacity 
-              onPress={() => removeFromCart(item._id)} 
-              style={styles.removeButton}
-            >
-              <Text style={styles.removeButtonText}>✕</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+        renderItem={renderItem}
+        initialNumToRender={5}
+        maxToRenderPerBatch={5}
+        windowSize={5}
+        showsVerticalScrollIndicator={false}
       />
 
       <View style={styles.totalContainer}>
         <Text style={styles.totalText}>Total:</Text>
         <Text style={styles.totalPrice}>₹{totalPrice}</Text>
       </View>
-      
-      <TouchableOpacity 
-        style={[
-          styles.proceedButton,
-          loadingLocation && styles.disabledButton
-        ]} 
+
+      {locationError ? (
+        <View style={styles.errorContainer}>
+          <Text
+            style={styles.errorText}
+            accessibilityLiveRegion="polite"
+            accessibilityRole="alert"
+          >
+            {locationError}
+          </Text>
+          <TouchableOpacity
+            onPress={handleOpenSettings}
+            style={styles.retryButton}
+            activeOpacity={0.7}
+            accessibilityLabel="Open settings"
+            accessibilityHint="Opens device settings to enable location permission"
+          >
+            <Text style={styles.retryButtonText}>Open Settings</Text>
+          </TouchableOpacity>
+        </View>
+      ) : null}
+
+      <TouchableOpacity
+        style={[styles.proceedButton, loadingLocation && styles.disabledButton]}
         onPress={handleGetLocation}
         disabled={loadingLocation}
+        activeOpacity={0.8}
+        accessibilityLabel="Proceed to checkout"
+        accessibilityHint="Fetches your location and proceeds to checkout"
       >
         <Text style={styles.proceedText}>
           {loadingLocation ? "Getting Location..." : "Proceed to Checkout"}
         </Text>
       </TouchableOpacity>
 
-      <Modal 
-        visible={modalVisible} 
-        animationType="slide" 
+      {loadingLocation && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color="#222" />
+        </View>
+      )}
+
+      <Modal
+        visible={modalVisible}
+        animationType="slide"
         transparent={true}
         onRequestClose={() => setModalVisible(false)}
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Confirm Your Location</Text>
-            
+
             {location && (
               <MapView
                 style={styles.map}
@@ -235,28 +309,48 @@ const CartDisplay = () => {
                   latitudeDelta: 0.01,
                   longitudeDelta: 0.01,
                 }}
+                liteMode={Platform.OS === "android"} // Optimize for Android
+                accessibilityLabel="Map showing your location"
+                accessibilityHint="Displays your current location on a map"
               >
-                <Marker 
+                <Marker
                   coordinate={{
                     latitude: location.latitude,
-                    longitude: location.longitude
-                  }} 
-                  title="Your Location" 
+                    longitude: location.longitude,
+                  }}
+                  title="Your Location"
+                  accessibilityLabel="Your location marker"
                 />
               </MapView>
             )}
-            
+
+            {addressError ? (
+              <Text
+                style={styles.errorText}
+                accessibilityLiveRegion="polite"
+                accessibilityRole="alert"
+              >
+                {addressError}
+              </Text>
+            ) : null}
+
             <View style={styles.modalButtons}>
-              <TouchableOpacity 
-                style={styles.cancelButton} 
+              <TouchableOpacity
+                style={styles.cancelButton}
                 onPress={() => setModalVisible(false)}
+                activeOpacity={0.7}
+                accessibilityLabel="Cancel location selection"
+                accessibilityHint="Closes the location selection modal"
               >
                 <Text style={styles.buttonText}>Cancel</Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.confirmButton} 
+
+              <TouchableOpacity
+                style={styles.confirmButton}
                 onPress={handleConfirmLocation}
+                activeOpacity={0.7}
+                accessibilityLabel="Confirm location"
+                accessibilityHint="Confirms your selected location and proceeds to checkout"
               >
                 <Text style={styles.buttonText}>Confirm Location</Text>
               </TouchableOpacity>
@@ -298,6 +392,10 @@ const styles = StyleSheet.create({
     padding: 15,
     marginBottom: 12,
     alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
     elevation: 2,
   },
   itemImage: {
@@ -336,6 +434,7 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 16,
     fontWeight: "bold",
+    color: "#222",
   },
   quantity: {
     fontSize: 18,
@@ -372,12 +471,37 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#ff4d4d",
   },
+  errorContainer: {
+    marginTop: 10,
+    alignItems: "center",
+  },
+  errorText: {
+    color: "#ff4d4d",
+    fontSize: 14,
+    textAlign: "center",
+    marginBottom: 5,
+  },
+  retryButton: {
+    backgroundColor: "#1E90FF",
+    padding: 8,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "bold",
+  },
   proceedButton: {
     backgroundColor: "#222",
     padding: 15,
     borderRadius: 12,
     alignItems: "center",
     marginTop: 15,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 3,
   },
   disabledButton: {
     backgroundColor: "#888",
@@ -386,6 +510,16 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 18,
     fontWeight: "bold",
+  },
+  loadingOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.2)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   modalContainer: {
     flex: 1,
@@ -400,14 +534,20 @@ const styles = StyleSheet.create({
     width: "90%",
     maxWidth: 400,
     alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 5,
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: "bold",
     marginBottom: 10,
+    color: "#222",
   },
   map: {
-    width: '100%',
+    width: "100%",
     height: 200,
     marginVertical: 10,
     borderRadius: 8,
@@ -415,8 +555,8 @@ const styles = StyleSheet.create({
   modalButtons: {
     flexDirection: "row",
     marginTop: 15,
-    justifyContent: 'space-between',
-    width: '100%',
+    justifyContent: "space-between",
+    width: "100%",
   },
   cancelButton: {
     backgroundColor: "#ddd",
@@ -424,15 +564,15 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     flex: 1,
     marginRight: 10,
-    alignItems: 'center',
+    alignItems: "center",
   },
   confirmButton: {
-    backgroundColor: "green",
+    backgroundColor: "#1E90FF", // Match button color with app theme
     padding: 10,
     borderRadius: 8,
     flex: 1,
-    alignItems: 'center',
+    alignItems: "center",
   },
 });
 
-export default CartDisplay;
+export default React.memo(CartDisplay);

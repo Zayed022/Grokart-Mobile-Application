@@ -1,8 +1,12 @@
 import axios from 'axios';
-import React, { useEffect, useState } from 'react';
-import { View, Text, Image, TouchableOpacity, ScrollView, ActivityIndicator, StyleSheet } from 'react-native';
+import React, { useEffect, useState, useCallback } from 'react';
+import { View, Text, Image, FlatList, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { CategorySkeleton } from './CategorySkeleton';
+
+// Simple in-memory cache for API responses
+const cache = new Map();
+
 // Define TypeScript interfaces
 interface Subcategory {
   _id: string;
@@ -13,13 +17,32 @@ interface Subcategory {
 
 type CategoryMap = Record<string, Subcategory[]>;
 
+// Define type for FlatList item
+interface CategoryItem {
+  categoryName: string;
+  subcategories: Subcategory[];
+}
+
 const CsCards: React.FC = () => {
+  // Declare all hooks at the top level, before any early returns
   const [categories, setCategories] = useState<CategoryMap>({});
   const [loading, setLoading] = useState<boolean>(true);
   const navigation = useNavigation();
+  const handleCategoryRedirect = useCallback((subcategory: string) => {
+    navigation.navigate("Category", { subCategory: subcategory });
+  }, [navigation]);
 
   useEffect(() => {
     const fetchCategories = async () => {
+      const cacheKey = 'categories';
+
+      // Check if data is in cache
+      if (cache.has(cacheKey)) {
+        setCategories(cache.get(cacheKey));
+        setLoading(false);
+        return;
+      }
+
       try {
         const response = await axios.get('https://grokart-2.onrender.com/api/v1/category/get-all-categories');
         const data: Subcategory[] = response.data;
@@ -33,6 +56,8 @@ const CsCards: React.FC = () => {
           return acc;
         }, {});
 
+        // Cache the data
+        cache.set(cacheKey, groupedCategories);
         setCategories(groupedCategories);
       } catch (error) {
         console.error('Error fetching categories:', error);
@@ -44,87 +69,107 @@ const CsCards: React.FC = () => {
     fetchCategories();
   }, []);
 
+  // Early return after all hooks are called
   if (loading) {
     return <CategorySkeleton />;
   }
-  
-  const handleCategoryRedirect = (subcategory: string) => {
-    navigation.navigate("Category", { subCategory: subcategory });
-  };
-  
+
+  // Convert categories object to array for FlatList
+  const categoryList: CategoryItem[] = Object.entries(categories).map(([categoryName, subcategories]) => ({
+    categoryName,
+    subcategories,
+  }));
+
+  // Render each category section
+  const renderCategory = ({ item }: { item: CategoryItem }) => (
+    <View style={styles.categorySection}>
+      <Text style={styles.categoryTitle}>{item.categoryName}</Text>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false} // Hide scrollbar for cleaner look
+        style={styles.subcategoryScroll}
+      >
+        {item.subcategories.map((subcategory) => (
+          <TouchableOpacity
+            onPress={() => handleCategoryRedirect(subcategory.subcategory)}
+            key={subcategory._id}
+            style={styles.card}
+          >
+            <Image
+              source={{ uri: subcategory.image || 'https://via.placeholder.com/200' }}
+              style={styles.image}
+              resizeMode="cover"
+              defaultSource={{ uri: 'https://via.placeholder.com/200' }} // Placeholder for faster perceived loading
+            />
+            <Text style={styles.subcategoryText}>{subcategory.subcategory}</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+    </View>
+  );
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <View style={styles.container}>
       <Text style={styles.heading}>Shop by Category</Text>
-
-      {Object.entries(categories).map(([categoryName, subcategories]) => (
-        <View key={categoryName} style={styles.categorySection}>
-          <Text style={styles.categoryTitle}>{categoryName}</Text>
-
-          <ScrollView horizontal showsHorizontalScrollIndicator={true} style={styles.subcategoryScroll}>
-            {subcategories.map((subcategory) => (
-              <TouchableOpacity onPress={() => handleCategoryRedirect(subcategory.subcategory)}
-                key={subcategory._id}
-                //onPress={() => navigation.navigate('SubCategory', { subcategory: subcategory.subcategory })}
-                style={styles.card}
-              >
-                <Image 
-                  source={{ uri: subcategory.image || 'https://via.placeholder.com/200' }}
-                  style={styles.image}
-                />
-                <Text style={styles.subcategoryText}>{subcategory.subcategory}</Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-      ))}
-    </ScrollView>
+      <FlatList
+        data={categoryList}
+        renderItem={renderCategory}
+        keyExtractor={(item) => item.categoryName}
+        showsVerticalScrollIndicator={false} // Hide scrollbar for cleaner look
+        initialNumToRender={5} // Render only 5 items initially
+        maxToRenderPerBatch={5} // Control batch rendering
+        windowSize={5} // Limit the number of items in memory
+      />
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: 20,
-  },
-  loader: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    paddingVertical: 15, // Reduced padding for efficiency
   },
   heading: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: 'bold',
+    color: 'black',
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: 15, // Reduced margin
   },
   categorySection: {
-    marginBottom: 30,
+    marginBottom: 20, // Reduced margin
   },
   categoryTitle: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
+    color: 'black',
     marginLeft: 10,
-    marginBottom: 10,
+    marginBottom: 5, // Reduced margin
   },
   subcategoryScroll: {
     paddingLeft: 10,
-    flexDirection:'row',
-    marginTop:5
+    flexDirection: 'row',
   },
   card: {
     alignItems: 'center',
-    marginRight: 20,
+    marginRight: 15,
+    shadowColor: '#000',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.1,
+  shadowRadius: 4,
+  elevation: 3, // Reduced margin
   },
   image: {
-    width: 150,
-    height: 150,
+    width: 140, // Slightly reduced size for faster rendering
+    height: 140,
     borderRadius: 12,
   },
   subcategoryText: {
-    marginTop: 10,
+    marginTop: 8, // Reduced margin
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: 'bold',
+    color: 'black',
+    textAlign: 'center',
   },
 });
 
-export default CsCards;
+export default React.memo(CsCards); // Memoize the component

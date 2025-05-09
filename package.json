@@ -25,6 +25,7 @@
     "react": "19.0.0",
     "react-native": "0.78.1",
     "react-native-async-storage": "^0.0.1",
+    "react-native-fast-image": "^8.6.3",
     "react-native-geolocation-service": "^5.3.1",
     "react-native-gesture-handler": "^2.25.0",
     "react-native-get-location": "^5.0.0",
