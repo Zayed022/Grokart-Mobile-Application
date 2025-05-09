@@ -20,31 +20,35 @@ export default App;
 // App.tsx
 // App.tsx
 import 'react-native-reanimated';
-
-import React from 'react';
+import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import AppNavigator from './src/navigation/AppNavigator';
 import { CartProvider } from './src/context/Cart';
-import 'react-native-gesture-handler';
-
-
 import SplashScreen from 'react-native-splash-screen';
-import { useEffect } from 'react';
+import 'react-native-gesture-handler';
 
 const App = () => {
   useEffect(() => {
-      setTimeout(() => {
+    const hideSplash = async () => {
+      try {
+        setTimeout(() => {
           SplashScreen.hide();
-      }, 2000); // Adjust delay as needed
+        }, 2000);
+      } catch (err) {
+        console.warn('SplashScreen hide failed:', err);
+      }
+    };
+    hideSplash();
   }, []);
+
   return (
     <CartProvider>
-    <NavigationContainer>
-      
-      <AppNavigator />
-    </NavigationContainer>
+      <NavigationContainer>
+        <AppNavigator />
+      </NavigationContainer>
     </CartProvider>
   );
 };
 
 export default App;
+
