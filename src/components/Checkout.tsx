@@ -25,7 +25,11 @@ const OrderItem = React.memo(({ item }: OrderItemProps) => {
       >
         {item.name} x{item.quantity}
       </Text>
+      
+      
+      
       <Text style={styles.itemPrice}>₹{item.price * item.quantity}</Text>
+      
     </View>
   );
 });

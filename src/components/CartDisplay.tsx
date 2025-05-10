@@ -9,6 +9,8 @@ import {
   Modal,
   ActivityIndicator,
   Platform,
+  Alert,
+  
 } from "react-native";
 import { useCart } from "../context/Cart";
 import MapView, { Marker } from "react-native-maps";
@@ -22,6 +24,7 @@ import {
   openSettings,
 } from "react-native-permissions";
 import axios from "axios";
+import { Swipeable } from 'react-native-gesture-handler';
 
 interface Location {
   latitude: number;
@@ -33,6 +36,7 @@ interface CartItemProps {
   updateQuantity: (id: string, quantity: number) => void;
   removeFromCart: (id: string) => void;
 }
+
 
 const CartItem = React.memo(
   ({ item, updateQuantity, removeFromCart }: CartItemProps) => {
@@ -47,8 +51,18 @@ const CartItem = React.memo(
     const handleRemove = useCallback(() => {
       removeFromCart(item._id);
     }, [item._id, removeFromCart]);
+    const renderRightActions = () => (
+  <TouchableOpacity
+    style={styles.swipeDeleteButton}
+    onPress={handleRemove}
+    activeOpacity={0.7}
+  >
+    <Text style={styles.swipeDeleteText}>Delete</Text>
+  </TouchableOpacity>
+);
 
     return (
+      <Swipeable renderRightActions={renderRightActions}>
       <View style={styles.cartItem}>
         <Image
           source={{ uri: item.image }}
@@ -57,9 +71,11 @@ const CartItem = React.memo(
         />
         <View style={styles.detailsContainer}>
           <Text style={styles.itemName} numberOfLines={1} ellipsizeMode="tail">
-            {item.name}
+            {item.name} - {item.description}
           </Text>
-          <Text style={styles.itemPrice}>₹{item.price}</Text>
+          
+          <Text style={styles.itemPrice}>Price: ₹{item.price}</Text>
+          <Text style={styles.subtotal}>Subtotal: ₹{item.price * item.quantity}</Text>
           <View style={styles.quantityContainer}>
             <TouchableOpacity
               onPress={handleDecrease}
@@ -92,6 +108,7 @@ const CartItem = React.memo(
           <Text style={styles.removeButtonText}>✕</Text>
         </TouchableOpacity>
       </View>
+      </Swipeable>
     );
   }
 );
@@ -226,12 +243,13 @@ const CartDisplay = () => {
   if (cart.length === 0) {
     return (
       <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>Your cart is empty</Text>
+        <Text style={styles.emptyText}>Your cart is feeling lonely!!! Add Items to get started.</Text>
       </View>
     );
   }
 
   return (
+    
     <View style={styles.container}>
       <Text style={styles.header}>Shopping Cart</Text>
 
@@ -573,6 +591,27 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
   },
+  subtotal: {
+    fontSize: 15,
+    fontWeight: "500",
+    color: "#555",
+    fontWeight: "bold",
+  },
+  swipeDeleteButton: {
+  backgroundColor: '#ff4d4d',
+  justifyContent: 'center',
+  alignItems: 'center',
+  width: 80,
+  height: '100%',
+  borderTopRightRadius: 12,
+  borderBottomRightRadius: 12,
+},
+swipeDeleteText: {
+  color: '#fff',
+  fontWeight: 'bold',
+  fontSize: 14,
+},
+
 });
 
 export default React.memo(CartDisplay);

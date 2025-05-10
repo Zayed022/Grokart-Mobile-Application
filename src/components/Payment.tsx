@@ -165,6 +165,9 @@ const PaymentScreen = () => {
         </Text>
       </View>
 
+      <Text style={{ fontSize: 14, marginVertical: 6, color: '#10B981' }}>🚚 Estimated delivery: within 15–20 mins
+</Text>
+
       <View>
         <Text style={styles.label}>Order Summary</Text>
         <FlatList
@@ -190,8 +193,8 @@ const PaymentScreen = () => {
                 <Text>₹{handlingFee.toFixed(2)}</Text>
               </View>
               <View style={styles.totalRow}>
-                <Text style={{ fontWeight: 'bold' }}>Total Payable</Text>
-                <Text style={{ fontWeight: 'bold' }}>₹{totalPrice.toFixed(2)}</Text>
+                <Text style={{ fontWeight: 'bold',color: '#1F2937',fontSize:16 }}>Total Payable</Text>
+                <Text style={{ fontWeight: 'bold',color: '#1F2937', fontSize:16 }}>₹{totalPrice.toFixed(2)}</Text>
               </View>
             </View>
           }
@@ -228,20 +231,66 @@ const PaymentScreen = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#ffffff', padding: 16 },
-  heading: { fontSize: 24, fontWeight: 'bold', textAlign: 'center', color: '#1f2937', marginBottom: 24 },
+  heading: {
+  fontSize: 26,
+  fontWeight: '700',
+  textAlign: 'center',
+  color: '#111827', // darker text for better hierarchy
+  marginBottom: 24,
+},
   addressContainer: { backgroundColor: '#f3f4f6', padding: 16, borderRadius: 8, marginBottom: 16 },
-  label: { fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8 },
-  addressText: { fontSize: 14, color: '#6b7280' },
-  summaryContainer: { marginTop: 8 },
-  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginVertical: 4 },
-  summaryText: { flex: 1 },
-  summaryPrice: { textAlign: 'right' },
-  totalRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 16, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#d1d5db', fontWeight: 'bold' },
+  label: {
+  fontSize: 16,
+  fontWeight: '700',
+  color: '#111827',
+  marginBottom: 6,
+},
+  addressText: {
+  fontSize: 15,
+  color: '#4B5563',
+  lineHeight: 22,
+},
+  summaryContainer: { marginTop: 8 ,color: '#1F2937',},
+  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginVertical: 4,color: '#1F2937', },
+  summaryText: {
+  fontSize: 15,
+  color: '#1F2937',
+  flex: 1,
+  fontWeight: '500',
+},
+
+summaryPrice: {
+  fontSize: 15,
+  color: '#1F2937',
+  fontWeight: '600',
+  textAlign: 'right',
+},
+ totalRow: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  marginTop: 16,
+  paddingTop: 10,
+  borderTopWidth: 1,
+  borderTopColor: '#D1D5DB',
+},
   paymentButton: { width: '100%', paddingVertical: 14, backgroundColor: '#1E90FF', borderRadius: 8, marginTop: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 3, elevation: 3 },
-  paymentButtonText: { color: 'white', fontSize: 16, fontWeight: '600', textAlign: 'center' },
+  paymentButtonText: { color: 'white', fontSize: 17, fontWeight: '600', textAlign: 'center', letterSpacing: 0.5 },
   centeredView: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  errorText: { color: '#ff4d4d', fontSize: 14, textAlign: 'center', marginBottom: 16 },
-  reassuranceText: { fontSize: 14, color: '#1f2937', textAlign: 'center', marginTop: 16, marginBottom: 8 },
+  errorText: {
+  color: '#DC2626', // Tailwind Red-600 for better visual alert
+  fontSize: 14,
+  textAlign: 'center',
+  marginBottom: 16,
+  fontWeight: '500',
+},
+  reassuranceText: {
+  fontSize: 14,
+  color: '#374151',
+  textAlign: 'center',
+  marginTop: 16,
+  marginBottom: 8,
+  fontStyle: 'italic',
+},
   loadingOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.2)', justifyContent: 'center', alignItems: 'center' },
 });
 

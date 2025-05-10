@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from "reac
 import { useNavigation } from "@react-navigation/native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { useCart } from "../context/Cart"; 
+import Grokart from "../assets/images/Grokart.png"
 
 const Navbar = () => {
   const navigation = useNavigation();
@@ -12,9 +13,7 @@ const Navbar = () => {
   return (
     <View style={styles.navbar}>
       {/* Logo or App Name */}
-      <TouchableOpacity onPress={() => navigation.navigate("Home")}>
-        <Text style={styles.logo}>GroKart</Text>
-      </TouchableOpacity>
+      <Image source={Grokart} style={{ width: 100, height: 30 }} />
 
       {/* Search Bar */}
       <TouchableOpacity style={styles.searchBarContainer} onPress={() => navigation.navigate("Search")}>

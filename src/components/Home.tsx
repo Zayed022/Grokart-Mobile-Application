@@ -20,6 +20,7 @@ const Home = () => {
   return (
     <View style={styles.container}>
       <Navbar />
+      
       <ScrollView
         contentContainerStyle={styles.content}
         refreshControl={
@@ -29,6 +30,8 @@ const Home = () => {
         <MemoizedCsCards refreshKey={refreshKey} />
       </ScrollView>
       <TouchableOpacity
+      accessibilityLabel="Go to cart"
+  accessibilityHint="Navigates to your shopping cart"
         style={styles.fab}
         onPress={() => navigation.navigate('Cart')} // Navigate to cart screen
       >
@@ -45,6 +48,7 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingBottom: 20,
+    paddingTop: 10,
   },
   fab: {
     position: 'absolute',
@@ -64,7 +68,7 @@ const styles = StyleSheet.create({
   },
   fabText: {
     fontSize: 24,
-    color:'#2C2196'
+    color:'#fff'
   },
 });
 
