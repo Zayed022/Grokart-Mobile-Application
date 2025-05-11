@@ -50,6 +50,7 @@ const Items = () => {
         <View style={styles.infoContainer}>
           <Text >{item.description}</Text>
           <Text style={styles.productName} numberOfLines={2}>{item.name}</Text>
+          <Text>{item.description}</Text>
           <Text style={styles.price}>₹{item.price}</Text>
 
           {/* Add to Cart & Quantity Selector */}

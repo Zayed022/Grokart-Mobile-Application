@@ -1,5 +1,16 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  Alert,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  ActivityIndicator,
+} from 'react-native';
 import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
 
@@ -8,112 +19,172 @@ const RegisterScreen = () => {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigation = useNavigation();
 
   const handleRegister = async () => {
     if (!name || !email || !phone || !password) {
-      Alert.alert('Error', 'All fields are required');
+      Alert.alert('Error', 'Please fill in all fields');
       return;
     }
 
+    setLoading(true);
     try {
-      const { data } = await axios.post('https://grokart-2.onrender.com/api/v1/users/register', {
-        name,
-        email,
-        phone,
-        password,
-      }, { withCredentials: true });
+      const { data } = await axios.post(
+        'https://grokart-2.onrender.com/api/v1/users/register',
+        { name, email, phone, password },
+        { withCredentials: true }
+      );
 
       if (data.success) {
         Alert.alert('Success', 'Registration successful', [
           { text: 'OK', onPress: () => navigation.navigate('Login') },
         ]);
       }
-    } catch (error:any) {
+    } catch (error: any) {
       Alert.alert('Registration Failed', error.response?.data?.message || 'Something went wrong');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Register</Text>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={{ flex: 1 }}
+    >
+      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+        <View style={styles.card}>
+          <Text style={styles.logo}>🛒 GroKart</Text>
+          <Text style={styles.heading}>Create an Account</Text>
+          <Text style={styles.subheading}>Start shopping your essentials</Text>
 
-      <TextInput
-        placeholder="Name"
-        value={name}
-        onChangeText={setName}
-        style={styles.input}
-      />
-      <TextInput
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-        style={styles.input}
-      />
-      <TextInput
-        placeholder="Phone"
-        value={phone}
-        onChangeText={setPhone}
-        keyboardType="phone-pad"
-        style={styles.input}
-      />
-      <TextInput
-        placeholder="Password"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-        style={styles.input}
-      />
+          <TextInput
+            placeholder="Full Name"
+            value={name}
+            onChangeText={setName}
+            style={styles.input}
+            placeholderTextColor="#aaa"
+          />
+          <TextInput
+            placeholder="Email"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            style={styles.input}
+            placeholderTextColor="#aaa"
+          />
+          <TextInput
+            placeholder="Phone Number"
+            value={phone}
+            onChangeText={setPhone}
+            keyboardType="phone-pad"
+            style={styles.input}
+            placeholderTextColor="#aaa"
+          />
+          <TextInput
+            placeholder="Password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            style={styles.input}
+            placeholderTextColor="#aaa"
+          />
 
-      <TouchableOpacity onPress={handleRegister} style={styles.button}>
-        <Text style={styles.buttonText}>Register</Text>
-      </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleRegister}
+            style={[styles.button, loading && styles.disabledButton]}
+            disabled={loading}
+          >
+            {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Register</Text>}
+          </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-        <Text style={styles.link}>Already Registered? Log In</Text>
-      </TouchableOpacity>
-    </View>
+          <TouchableOpacity onPress={() => navigation.navigate('Login')} style={styles.linkContainer}>
+            <Text style={styles.linkText}>
+              Already have an account? <Text style={styles.linkHighlight}>Login</Text>
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f3f4f6',
     padding: 20,
+    backgroundColor: '#F3F4F6',
+    flexGrow: 1,
+    justifyContent: 'center',
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 24,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+  },
+  logo: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#1E90FF',
+    textAlign: 'center',
+    marginBottom: 6,
+  },
+  heading: {
+    fontSize: 22,
+    fontWeight: '700',
+    textAlign: 'center',
+    color: '#111827',
+    marginBottom: 4,
+  },
+  subheading: {
+    fontSize: 14,
+    textAlign: 'center',
+    color: '#6B7280',
     marginBottom: 20,
   },
   input: {
-    width: '100%',
-    padding: 15,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    marginBottom: 15,
     backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    fontSize: 15,
+    marginBottom: 14,
+    height: 50,
+    color: '#111',
   },
   button: {
-    width: '100%',
-    backgroundColor: '#4CAF50',
-    padding: 15,
-    borderRadius: 8,
+    backgroundColor: '#1E90FF',
+    paddingVertical: 14,
+    borderRadius: 10,
     alignItems: 'center',
+    marginTop: 8,
+  },
+  disabledButton: {
+    backgroundColor: '#8DBFF5',
   },
   buttonText: {
-    color: 'white',
+    color: '#fff',
+    fontWeight: '600',
     fontSize: 16,
-    fontWeight: 'bold',
   },
-  link: {
+  linkContainer: {
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  linkText: {
+    fontSize: 14,
+    color: '#6B7280',
+  },
+  linkHighlight: {
     color: '#1E90FF',
-    marginTop: 15,
+    fontWeight: '600',
   },
 });
 
