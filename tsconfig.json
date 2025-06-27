@@ -7,8 +7,10 @@
     "moduleResolution": "node",
     "skipLibCheck": true,
     "allowSyntheticDefaultImports": true,
-    "noImplicitAny": false
+    "noImplicitAny": false,
+    "allowJs": true,
+    "checkJs": false,
+    "types": ["react", "react-native"]
   },
-
   "extends": "@react-native/typescript-config/tsconfig.json"
 }

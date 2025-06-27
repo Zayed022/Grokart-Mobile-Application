@@ -13,6 +13,8 @@ import {
 } from 'react-native';
 import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
+import Ionicons from "react-native-vector-icons/Ionicons";
+import Feather from "react-native-vector-icons/Feather";
 
 const RegisterScreen = () => {
   const [name, setName] = useState('');
@@ -49,6 +51,15 @@ const RegisterScreen = () => {
   };
 
   return (
+    <>
+    {/* Custom AppBar */}
+          <View style={styles.navbar}>
+            <TouchableOpacity onPress={() => navigation.goBack()}>
+              <Ionicons name="arrow-back-outline" size={26} color="#333" />
+            </TouchableOpacity>
+            <Text style={styles.navbarTitle}>Register</Text>
+            <View style={{ width: 26 }} />
+          </View>
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={{ flex: 1 }}
@@ -108,10 +119,26 @@ const RegisterScreen = () => {
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
+    </>
   );
 };
 
 const styles = StyleSheet.create({
+  navbar: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+    alignItems: "center",
+  },
+  navbarTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#111",
+  },
   container: {
     padding: 20,
     backgroundColor: '#F3F4F6',

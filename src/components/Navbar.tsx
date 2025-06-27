@@ -4,6 +4,9 @@ import { useNavigation } from "@react-navigation/native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { useCart } from "../context/Cart"; 
 import Grokart from "../assets/images/Grokart.png"
+import Feather from "react-native-vector-icons/Feather"; // for minimal, clean icons
+import Ionicons from "react-native-vector-icons/Ionicons"; // if you want iOS/Android-style icons
+
 
 const Navbar = () => {
   const navigation = useNavigation();
@@ -23,19 +26,20 @@ const Navbar = () => {
 
       {/* Icons (Cart & Profile) */}
       <View style={styles.iconContainer}>
-        <TouchableOpacity style={styles.cartContainer} onPress={() => navigation.navigate("Cart")}>
-          <Icon name="shopping-cart" size={28} color="black" />
-          {cartCount > 0 && (
-            <View style={styles.cartBadge}>
-              <Text style={styles.cartBadgeText}>{cartCount}</Text>
-            </View>
-          )}
-        </TouchableOpacity>
-
-        <TouchableOpacity onPress={() => navigation.navigate("Login")}>
-          <Icon name="person-outline" size={28} color="black" />
-        </TouchableOpacity>
+  <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate("Cart")}>
+    <Feather name="shopping-bag" size={22} color="#333" />
+    {cartCount > 0 && (
+      <View style={styles.cartBadge}>
+        <Text style={styles.cartBadgeText}>{cartCount}</Text>
       </View>
+    )}
+  </TouchableOpacity>
+
+  <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate("Login")}>
+    <Feather name="user" size={22} color="#333" />
+  </TouchableOpacity>
+</View>
+
     </View>
   );
 };
@@ -77,24 +81,39 @@ const styles = StyleSheet.create({
     color: "#888",
   },
   iconContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 16,
-  },
+  flexDirection: "row",
+  alignItems: "center",
+  gap: 14,
+},
+
+iconButton: {
+  position: "relative",
+  backgroundColor: "#f9f9f9",
+  padding: 8,
+  borderRadius: 12,
+  elevation: 1,
+  shadowColor: "#000",
+  shadowOffset: { width: 0, height: 1 },
+  shadowOpacity: 0.1,
+  shadowRadius: 2,
+},
+cartBadge: {
+  position: "absolute",
+  top: -4,
+  right: -4,
+  backgroundColor: "#ff4d4d",
+  width: 18,
+  height: 18,
+  borderRadius: 9,
+  alignItems: "center",
+  justifyContent: "center",
+  borderWidth: 1,
+  borderColor: "#fff",
+},
   cartContainer: {
     position: "relative",
   },
-  cartBadge: {
-    position: "absolute",
-    top: -5,
-    right: -8,
-    backgroundColor: "#ff4d4d",
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  
   cartBadgeText: {
     color: "#fff",
     fontSize: 12,

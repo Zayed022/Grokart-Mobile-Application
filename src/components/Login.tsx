@@ -9,10 +9,13 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
 } from "react-native";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
+import Ionicons from "react-native-vector-icons/Ionicons";
+import Feather from "react-native-vector-icons/Feather";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -42,7 +45,7 @@ const Login = () => {
       } else {
         Alert.alert("Login Failed", "Token not received.");
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Login error:", error.response?.data || error);
       Alert.alert("Login Failed", error.response?.data?.message || "Please try again.");
     } finally {
@@ -51,65 +54,105 @@ const Login = () => {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-    >
-      <View style={styles.card}>
-        <Text style={styles.logo}>🛒 GroKart</Text>
-        <Text style={styles.heading}>Welcome Back!</Text>
-        <Text style={styles.subheading}>Login to continue shopping</Text>
-
-        <TextInput
-          placeholder="Email Address"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          placeholderTextColor="#aaa"
-          style={styles.input}
-        />
-
-        <TextInput
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          placeholderTextColor="#aaa"
-          style={styles.input}
-        />
-
-        <TouchableOpacity
-          onPress={handleLogin}
-          style={[styles.button, loading && styles.disabledButton]}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>Login</Text>
-          )}
+    <>
+      {/* Custom AppBar */}
+      <View style={styles.navbar}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back-outline" size={26} color="#333" />
         </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={() => navigation.navigate("Register")}
-          style={styles.linkContainer}
-        >
-          <Text style={styles.linkText}>
-            New to GroKart? <Text style={styles.linkHighlight}>Sign Up</Text>
-          </Text>
-        </TouchableOpacity>
+        <Text style={styles.navbarTitle}>Login</Text>
+        <View style={{ width: 26 }} />
       </View>
-    </KeyboardAvoidingView>
+
+      {/* Content */}
+      <KeyboardAvoidingView
+        style={{ flex: 1, backgroundColor: "#F9FAFB" }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+        <ScrollView contentContainerStyle={styles.container}>
+          <View style={styles.card}>
+            <Text style={styles.logo}>🛒 Grokart</Text>
+            <Text style={styles.heading}>Welcome Back!</Text>
+            <Text style={styles.subheading}>Login to continue shopping</Text>
+
+            {/* Email Input */}
+            <View style={styles.inputGroup}>
+              <Feather name="mail" size={18} color="#888" style={styles.icon} />
+              <TextInput
+                placeholder="Email Address"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                placeholderTextColor="#aaa"
+                style={styles.input}
+              />
+            </View>
+
+            {/* Password Input */}
+            <View style={styles.inputGroup}>
+              <Feather name="lock" size={18} color="#888" style={styles.icon} />
+              <TextInput
+                placeholder="Password"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+                placeholderTextColor="#aaa"
+                style={styles.input}
+              />
+            </View>
+
+            {/* Login Button */}
+            <TouchableOpacity
+              onPress={handleLogin}
+              style={[styles.button, loading && styles.disabledButton]}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.buttonText}>Login</Text>
+              )}
+            </TouchableOpacity>
+
+            {/* Signup Link */}
+            <TouchableOpacity
+              onPress={() => navigation.navigate("Register")}
+              style={styles.linkContainer}
+            >
+              <Text style={styles.linkText}>
+                New to GroKart?{" "}
+                <Text style={styles.linkHighlight}>Create an Account</Text>
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </>
   );
 };
 
 const styles = StyleSheet.create({
+  navbar: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+    alignItems: "center",
+  },
+  navbarTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#111",
+  },
   container: {
-    flex: 1,
-    backgroundColor: "#F3F4F6",
+    flexGrow: 1,
     justifyContent: "center",
-    paddingHorizontal: 20,
+    padding: 20,
+    backgroundColor: "#F9FAFB",
   },
   card: {
     backgroundColor: "#fff",
@@ -117,23 +160,23 @@ const styles = StyleSheet.create({
     padding: 24,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 5,
   },
   logo: {
-    fontSize: 26,
-    fontWeight: "800",
-    color: "#1E90FF",
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#0f62fe",
     textAlign: "center",
-    marginBottom: 8,
+    marginBottom: 10,
   },
   heading: {
     fontSize: 22,
     fontWeight: "700",
     textAlign: "center",
-    color: "#111827",
-    marginBottom: 4,
+    color: "#1F2937",
+    marginBottom: 6,
   },
   subheading: {
     fontSize: 14,
@@ -141,26 +184,32 @@ const styles = StyleSheet.create({
     color: "#6B7280",
     marginBottom: 20,
   },
-  input: {
-    height: 50,
-    borderColor: "#E5E7EB",
-    borderWidth: 1,
+  inputGroup: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F3F4F6",
     borderRadius: 10,
-    paddingHorizontal: 14,
-    backgroundColor: "#fff",
+    paddingHorizontal: 12,
+    marginBottom: 16,
+  },
+  icon: {
+    marginRight: 8,
+  },
+  input: {
+    flex: 1,
+    height: 50,
     fontSize: 15,
-    marginBottom: 14,
     color: "#111",
   },
   button: {
-    backgroundColor: "#1E90FF",
+    backgroundColor: "#0f62fe",
     paddingVertical: 14,
     borderRadius: 10,
     alignItems: "center",
     marginTop: 6,
   },
   disabledButton: {
-    backgroundColor: "#8DBFF5",
+    backgroundColor: "#a3c2f2",
   },
   buttonText: {
     color: "#fff",
@@ -168,15 +217,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   linkContainer: {
-    marginTop: 16,
+    marginTop: 18,
     alignItems: "center",
   },
   linkText: {
-    color: "#6B7280",
     fontSize: 14,
+    color: "#6B7280",
   },
   linkHighlight: {
-    color: "#1E90FF",
+    color: "#0f62fe",
     fontWeight: "600",
   },
 });

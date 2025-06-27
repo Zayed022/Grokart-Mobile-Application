@@ -11,6 +11,8 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import { useCart } from "../context/Cart";
 import ProductSkeleton from "../components/ProductSkeleton";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Icon from "react-native-vector-icons/Ionicons";
+import CartBar from "./CartBar";
 
 interface Product {
   _id: string;
@@ -20,6 +22,7 @@ interface Product {
   description: string;
   subCategory?: string;
   image: string;
+  stock: number;
 }
 
 interface ProductCardProps {
@@ -47,12 +50,24 @@ const ProductCard = React.memo(
       accessibilityLabel={`Product: ${item.name}, price: ₹${item.price}`}
       accessibilityHint="Tap to view product details"
     >
-      <Image
-        source={{ uri: item.image }}
-        style={styles.image}
-        resizeMode="contain"
-        accessibilityLabel={`Image of ${item.name}`}
-      />
+              <Image
+          source={
+            item.image
+              ? {
+                  uri: item.image.includes('http://')
+                    ? item.image.replace('http://', 'https://').replace(/\.avif$/, '.jpg')
+                    : item.image.replace(/\.avif$/, '.jpg'),
+                }
+              : require('../assets/images/Grokart.png')
+          }
+          style={styles.image}
+          resizeMode="contain"
+          accessibilityLabel={`Image of ${item.name}`}
+          onError={(e) => {
+            console.warn(`Image load failed for ${item.name}:`, e.nativeEvent.error);
+          }}
+        />
+
       <Text
         style={styles.productName}
         numberOfLines={2}
@@ -72,44 +87,40 @@ const ProductCard = React.memo(
         accessibilityLabel={`Price: ₹${item.price}`}
       >
         ₹ {item.price}
-      </Text>
 
-      {cartItem ? (
-        <View style={styles.quantityContainer}>
-          <TouchableOpacity
-            onPress={handleDecreaseQuantity}
-            activeOpacity={0.8}
-            accessibilityLabel={`Decrease quantity of ${item.name}`}
-            accessibilityHint="Reduces the quantity of this item in the cart"
-          >
-            <Text style={styles.quantityButton}>-</Text>
-          </TouchableOpacity>
-          <Text
-            style={styles.quantityText}
-            accessibilityLabel={`Quantity: ${cartItem.quantity}`}
-          >
-            {cartItem.quantity}
-          </Text>
-          <TouchableOpacity
-            onPress={handleIncreaseQuantity}
-            activeOpacity={0.8}
-            accessibilityLabel={`Increase quantity of ${item.name}`}
-            accessibilityHint="Increases the quantity of this item in the cart"
-          >
-            <Text style={styles.quantityButton}>+</Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <TouchableOpacity
-          style={styles.button}
-          onPress={handleAddToCart}
-          activeOpacity={0.8}
-          accessibilityLabel={`Add ${item.name} to cart`}
-          accessibilityHint="Adds this product to your cart"
-        >
-          <Text style={styles.buttonText}>Add to Cart</Text>
-        </TouchableOpacity>
-      )}
+       
+
+      </Text>
+       {item.stock > 0 && item.stock < 5 && (
+  <Text style={styles.lowStockText}>Only {item.stock} left!</Text>
+)}
+
+      {item.stock === 0 ? (
+  <View style={[styles.button, styles.disabledButton]}>
+    <Text style={styles.disabledButtonText}>Out of Stock</Text>
+  </View>
+) : cartItem ? (
+  <View style={styles.quantityContainer}>
+    <TouchableOpacity onPress={handleDecreaseQuantity}>
+      <Text style={styles.quantityButton}>-</Text>
+    </TouchableOpacity>
+    <Text style={styles.quantityText}>{cartItem.quantity}</Text>
+    <TouchableOpacity
+      onPress={handleIncreaseQuantity}
+      disabled={cartItem.quantity >= item.stock}
+    >
+      <Text style={[styles.quantityButton, cartItem.quantity >= item.stock && styles.disabledButtonText]}>
+        +
+      </Text>
+    </TouchableOpacity>
+  </View>
+) : (
+  <TouchableOpacity style={styles.button} onPress={handleAddToCart}>
+    <Text style={styles.buttonText}>Add to Cart</Text>
+  </TouchableOpacity>
+  
+)}
+
     </TouchableOpacity>
   ),
   (prevProps, nextProps) =>
@@ -265,6 +276,15 @@ const SubCatProduct = () => {
   );
 
   return (
+    <>
+    {/* Navbar */}
+        <View style={styles.navbar}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Icon name="arrow-back" size={24} color="#000" />
+          </TouchableOpacity>
+          <Text style={styles.navbarTitle}>Products</Text>
+          <View style={{ width: 24 }} />
+        </View>
     <View style={styles.container}>
       <Text
         style={styles.header}
@@ -336,10 +356,27 @@ const SubCatProduct = () => {
         </View>
       )}
     </View>
+    <CartBar />
+    </>
   );
 };
 
 const styles = StyleSheet.create({
+  navbar: {
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  navbarTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#000",
+  },
   container: {
     flex: 1,
     backgroundColor: "#f9f9f9",
@@ -474,6 +511,27 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
   },
+  lowStockText: {
+  fontSize: 12,
+  color: "#EF4444",
+  marginBottom: 8,
+},
+
+disabledButton: {
+  backgroundColor: "#E5E7EB",
+  paddingVertical: 8,
+  width: "100%",
+  borderRadius: 6,
+  alignItems: "center",
+  marginTop: "auto",
+},
+
+disabledButtonText: {
+  color: "#9CA3AF",
+  fontSize: 14,
+  fontWeight: "bold",
+},
+
 });
 
 export default React.memo(SubCatProduct);

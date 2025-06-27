@@ -14,12 +14,17 @@ import Checkout from '../components/Checkout';
 import AddressDetails from '../components/AddressDetails';
 import Payment from '../components/Payment';
 import PaymentSuccess from '../components/PaymentSuccess';
+import OrderInvoice from '../components/OrderInvoice';
 
 const Stack = createStackNavigator();
 
 const AppNavigator = () => {
   return (
-    <Stack.Navigator initialRouteName="Home">
+    <Stack.Navigator 
+    screenOptions={{
+    headerShown: false, // disables the header for every screen
+  }} 
+    initialRouteName="Home">
       <Stack.Screen name="Home" component={Home} options={{ headerShown: false }}/>
       <Stack.Screen name="Login" component={Login} />
       <Stack.Screen name="Register" component={Register} />
@@ -32,6 +37,7 @@ const AppNavigator = () => {
       <Stack.Screen name="Checkout" component={Checkout} />
       <Stack.Screen name="Payment" component={Payment} />
       <Stack.Screen name="PaymentSuccess" component={PaymentSuccess} />
+      <Stack.Screen name="OrderInvoice" component={OrderInvoice} />
 
     </Stack.Navigator>
   );

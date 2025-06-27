@@ -172,4 +172,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default React.memo(CsCards); // Memoize the component
+export default React.memo(CsCards); 

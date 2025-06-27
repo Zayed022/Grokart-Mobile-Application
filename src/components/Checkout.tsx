@@ -9,6 +9,8 @@ import {
 } from "react-native";
 import { useCart } from "../context/Cart";
 import { useNavigation, useRoute } from "@react-navigation/native";
+import Icon from "react-native-vector-icons/Ionicons";
+import { ScrollView } from "react-native";
 
 interface OrderItemProps {
   item: any;
@@ -17,19 +19,18 @@ interface OrderItemProps {
 const OrderItem = React.memo(({ item }: OrderItemProps) => {
   return (
     <View style={styles.orderItem}>
+
+      
       <Text
         style={styles.itemName}
         numberOfLines={1}
         ellipsizeMode="tail"
         accessibilityLabel={`Item name: ${item.name}, quantity: ${item.quantity}`}
       >
-        {item.name} x{item.quantity}
+        {item.name} × {item.quantity} | {item.description}
+        
       </Text>
-      
-      
-      
       <Text style={styles.itemPrice}>₹{item.price * item.quantity}</Text>
-      
     </View>
   );
 });
@@ -47,68 +48,89 @@ const Checkout = () => {
   }, [cart]);
 
   const handlePlaceOrder = useCallback(() => {
-    if (!address || !location) {
-      return; // Error is handled inline
-    }
-
+    if (!address || !location) return;
     setLoading(true);
-    // Simulate a delay for placing the order (e.g., API call)
     setTimeout(() => {
       setLoading(false);
       navigation.navigate("AddressDetails", { address, location });
     }, 1000);
   }, [address, location, navigation]);
 
-  const renderItem = useCallback(
-    ({ item }) => <OrderItem item={item} />,
-    []
-  );
+  const renderItem = useCallback(({ item }) => <OrderItem item={item} />, []);
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>🛒 Checkout</Text>
+  <>
+    {/* Navbar */}
+    <View style={styles.navbar}>
+      <TouchableOpacity onPress={() => navigation.goBack()}>
+        <Icon name="arrow-back" size={24} color="#000" />
+      </TouchableOpacity>
+      <Text style={styles.navbarTitle}>Bill Details</Text>
+      <View style={{ width: 24 }} />
+    </View>
 
-      {/* Address Card */}
+    {/* Scrollable Content */}
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={{ paddingBottom: 100 }}
+      showsVerticalScrollIndicator={false}
+    >
+      <Text style={styles.header}>🛒 Checkout Summary</Text>
+
       <View style={styles.card}>
-        <Text style={styles.subHeader}>📍 Delivery Address</Text>
-        <Text
-          style={styles.addressText}
-          accessibilityLabel={`Delivery address: ${address || "No address selected"}`}
-        >
-          {address || "No address selected"}
-        </Text>
-        {!address || !location ? (
-          <Text
-            style={styles.errorText}
-            accessibilityLiveRegion="polite"
-            accessibilityRole="alert"
-          >
-            Please go back and select your location.
-          </Text>
-        ) : null}
+        <Text style={styles.subHeader}>📍 Shipping Address</Text>
+        <Text style={styles.addressText}>{address || "No address selected"}</Text>
+        {(!address || !location) && (
+          <Text style={styles.errorText}>Please go back and select your location.</Text>
+        )}
       </View>
 
-      {/* Order Summary */}
       <View style={styles.card}>
-        <Text style={styles.subHeader}>📦 Order Summary</Text>
+        <Text style={styles.subHeader}>📦 Order Items</Text>
         <FlatList
           data={cart}
           keyExtractor={(item) => item._id}
           renderItem={renderItem}
-          initialNumToRender={5}
-          maxToRenderPerBatch={5}
-          windowSize={5}
-          showsVerticalScrollIndicator={false}
+          scrollEnabled={false}
         />
       </View>
 
-      {/* Total Price */}
-      <View style={styles.totalContainer}>
-        <Text style={styles.totalText}>Total:</Text>
-        <Text style={styles.totalPrice}>₹{totalPrice}</Text>
+      <View style={styles.chargeBreakdownCard}>
+        <View style={styles.chargeRow}>
+          <Text style={styles.chargeLabel}>Item Total</Text>
+          <Text style={styles.chargeValue}>₹{totalPrice}</Text>
+        </View>
+        <View style={styles.chargeRow}>
+          <Text style={styles.chargeLabel}>Delivery Charge</Text>
+          <Text style={styles.chargeValue}>₹15</Text>
+        </View>
+        <Text style={styles.deliveryNote}>
+          100% of this fee goes directly to the delivery partner
+        </Text>
+        <View style={styles.chargeRow}>
+          <Text style={styles.chargeLabel}>Handling Fee</Text>
+          <Text style={styles.chargeValue}>₹5</Text>
+        </View>
+        <View style={styles.chargeRow}>
+          <Text style={styles.chargeLabel}>GST & Charges</Text>
+          <Text style={styles.chargeValue}>₹2</Text>
+        </View>
+
+        <View style={styles.totalPayableRow}>
+          <Text style={styles.totalPayableLabel}>Total Payable</Text>
+          <Text style={styles.totalPayableAmount}>₹{totalPrice + 15 + 5 + 2}</Text>
+        </View>
       </View>
 
-      {/* Place Order Button */}
+      <View style={styles.warningBox}>
+        <Text style={styles.warningText}>⚠️ Review your order to avoid cancellation.</Text>
+      </View>
+      <View style={styles.noteBox}>
+        <Text style={styles.noteText}>
+          NOTE: Orders cannot be cancelled and are non-refundable once packed for delivery.
+        </Text>
+      </View>
+
       <TouchableOpacity
         onPress={handlePlaceOrder}
         style={[
@@ -121,22 +143,39 @@ const Checkout = () => {
         accessibilityHint="Proceeds to the next step of the order process"
       >
         <Text style={styles.placeOrderText}>
-          {loading ? "Processing..." : "Place Order"}
+          {loading ? "Processing..." : "Proceed to Payment"}
         </Text>
       </TouchableOpacity>
+    </ScrollView>
 
-      {loading && (
-        <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color="#1E90FF" />
-        </View>
-      )}
-    </View>
-  );
+    {loading && (
+      <View style={styles.loadingOverlay}>
+        <ActivityIndicator size="large" color="#1E90FF" />
+      </View>
+    )}
+  </>
+);
+
 };
 
 export default React.memo(Checkout);
 
 const styles = StyleSheet.create({
+  navbar: {
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  navbarTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#000",
+  },
   container: {
     flex: 1,
     padding: 20,
@@ -147,26 +186,26 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     textAlign: "center",
     marginBottom: 20,
-    color: "#222", // Match CartDisplay
+    color: "#222",
   },
   card: {
     backgroundColor: "#fff",
     padding: 15,
-    borderRadius: 16, // Match CartDisplay
+    borderRadius: 16,
     shadowColor: "#000",
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 4,
     elevation: 3,
     marginBottom: 15,
     borderWidth: 1,
-    borderColor: "#1E90FF", // Match CartDisplay
+    borderColor: "#1E90FF",
   },
   subHeader: {
     fontSize: 18,
-    fontWeight: "700", // Bolder for emphasis
+    fontWeight: "700",
     marginBottom: 10,
-    color: "#222", // Match CartDisplay
+    color: "#222",
   },
   addressText: {
     fontSize: 16,
@@ -174,7 +213,7 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   errorText: {
-    color: "#ff4d4d", // Match CartDisplay
+    color: "#ff4d4d",
     fontSize: 14,
     marginTop: 5,
   },
@@ -184,49 +223,95 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: "#eee",
-    backgroundColor: "#f9f9f9", // Light background for items
+    backgroundColor: "#f9f9f9",
     paddingHorizontal: 10,
-    borderRadius: 8, // Rounded corners
+    borderRadius: 8,
     marginBottom: 5,
   },
   itemName: {
     fontSize: 16,
-    fontWeight: "600", // Match CartDisplay
-    color: "#222", // Match CartDisplay
+    fontWeight: "600",
+    color: "#222",
     flex: 1,
   },
   itemPrice: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#ff4d4d", // Match app theme
+    color: "#ff4d4d",
   },
-  totalContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    backgroundColor: "#f9f9f9",
+  chargeBreakdownCard: {
+    backgroundColor: "#fff",
     padding: 15,
     borderRadius: 12,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 3,
-    elevation: 2,
-    marginTop: 10,
+    marginTop: 15,
     borderWidth: 1,
-    borderColor: "#1E90FF", // Match CartDisplay
+    borderColor: "#e0e0e0",
+    elevation: 2,
   },
-  totalText: {
+  chargeRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 6,
+  },
+  chargeLabel: {
+    fontSize: 16,
+    color: "#333",
+  },
+  chargeValue: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#222",
+  },
+  deliveryNote: {
+    fontSize: 12,
+    color: "#666",
+    marginBottom: 6,
+    marginTop: -4,
+  },
+  totalPayableRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderTopColor: "#ccc",
+    marginTop: 10,
+  },
+  totalPayableLabel: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#222",
+  },
+  totalPayableAmount: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#222", // Match CartDisplay
+    color: "green",
   },
-  totalPrice: {
-    fontSize: 22,
-    fontWeight: "bold",
-    color: "#ff4d4d", // Match app theme
+  warningBox: {
+    backgroundColor: "#fff9c4",
+    padding: 10,
+    borderRadius: 8,
+    marginTop: 15,
+    borderColor: "#fdd835",
+    borderWidth: 1,
+  },
+  warningText: {
+    color: "#795548",
+    fontSize: 14,
+  },
+  noteBox: {
+    backgroundColor: "#f8f8f8",
+    padding: 10,
+    borderRadius: 8,
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: "#ddd",
+  },
+  noteText: {
+    fontSize: 13,
+    color: "#666",
   },
   placeOrderButton: {
-    backgroundColor: "#1E90FF", // Match app theme
+    backgroundColor: "#1E90FF",
     padding: 15,
     borderRadius: 12,
     alignItems: "center",
@@ -238,7 +323,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   disabledButton: {
-    backgroundColor: "#a3d4ff", // Lighter shade when disabled
+    backgroundColor: "#a3d4ff",
   },
   placeOrderText: {
     fontSize: 18,

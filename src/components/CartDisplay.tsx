@@ -16,6 +16,7 @@ import { useCart } from "../context/Cart";
 import MapView, { Marker } from "react-native-maps";
 import { useNavigation } from "@react-navigation/native";
 import Geolocation from "@react-native-community/geolocation";
+import Icon from "react-native-vector-icons/Ionicons";
 import {
   check,
   request,
@@ -186,6 +187,8 @@ const CartDisplay = () => {
       return;
     }
 
+    
+
     Geolocation.getCurrentPosition(
       (position) => {
         console.log("Location Fetched");
@@ -204,30 +207,47 @@ const CartDisplay = () => {
         if (error.code === 4) errorMessage = "App context lost. Restart the app.";
         setLocationError(errorMessage);
       },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000,
+        distanceFilter: 0,
+    
+    
+    
+       }
     );
   }, [requestLocationPermission]);
 
   const handleConfirmLocation = useCallback(async () => {
-    if (!location) {
-      setAddressError("No location selected");
+  if (!location) {
+    setAddressError("No location selected");
+    return;
+  }
+
+  try {
+    const response = await axios.get(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${location.latitude}&lon=${location.longitude}`
+    );
+
+    const address = response.data.display_name || "";
+    const isInBhiwandi = address.toLowerCase().includes("bhiwandi");
+
+    if (!isInBhiwandi) {
+      setModalVisible(false);
+      Alert.alert(
+        "Service Unavailable",
+        "Sorry, we are currently not available in your area.",
+        [{ text: "OK" }]
+      );
       return;
     }
 
-    try {
-      const response = await axios.get(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${location.latitude}&lon=${location.longitude}`
-      );
+    setModalVisible(false);
+    navigation.navigate("Checkout", { address, location });
+  } catch (error) {
+    console.error("Error fetching address:", error);
+    setAddressError("Failed to get address. Try again.");
+  }
+}, [location, navigation]);
 
-      const address = response.data.display_name;
-
-      setModalVisible(false);
-      navigation.navigate("Checkout", { address, location });
-    } catch (error) {
-      console.error("Error fetching address:", error);
-      setAddressError("Failed to get address. Try again.");
-    }
-  }, [location, navigation]);
 
   const renderItem = useCallback(
     ({ item }) => (
@@ -249,7 +269,15 @@ const CartDisplay = () => {
   }
 
   return (
-    
+    <>
+     {/* Navbar */}
+    <View style={styles.navbar}>
+      <TouchableOpacity onPress={() => navigation.goBack()}>
+        <Icon name="arrow-back" size={24} color="#000" />
+      </TouchableOpacity>
+      <Text style={styles.navbarTitle}>Your Cart</Text>
+      <View style={{ width: 24 }} />
+    </View>
     <View style={styles.container}>
       <Text style={styles.header}>Shopping Cart</Text>
 
@@ -280,7 +308,8 @@ const CartDisplay = () => {
           <TouchableOpacity
             onPress={handleOpenSettings}
             style={styles.retryButton}
-            activeOpacity={0.7}
+            activeOpacity={0.85}
+
             accessibilityLabel="Open settings"
             accessibilityHint="Opens device settings to enable location permission"
           >
@@ -377,10 +406,26 @@ const CartDisplay = () => {
         </View>
       </Modal>
     </View>
+    </>
   );
 };
 
 const styles = StyleSheet.create({
+  navbar: {
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  navbarTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#000",
+  },
   container: {
     flex: 1,
     backgroundColor: "#fff",
@@ -426,15 +471,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   itemName: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#333",
-  },
-  itemPrice: {
-    fontSize: 16,
-    color: "#777",
-    marginVertical: 5,
-  },
+  fontSize: 17,
+  fontWeight: "600",
+  color: "#222",
+},
+itemPrice: {
+  fontSize: 15,
+  color: "#666",
+},
+
   quantityContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -443,11 +488,12 @@ const styles = StyleSheet.create({
   quantityButton: {
     backgroundColor: "#ddd",
     padding: 6,
-    borderRadius: 6,
+    borderRadius: 16,
     marginHorizontal: 10,
     minWidth: 35,
     alignItems: "center",
     justifyContent: "center",
+    
   },
   buttonText: {
     fontSize: 16,
@@ -510,25 +556,26 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   proceedButton: {
-    backgroundColor: "#222",
-    padding: 15,
-    borderRadius: 12,
-    alignItems: "center",
-    marginTop: 15,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 3,
-  },
+  backgroundColor: "#ff4d4d",
+  padding: 16,
+  borderRadius: 15,
+  alignItems: "center",
+  marginTop: 25,
+  shadowColor: "#ff4d4d",
+  shadowOffset: { width: 0, height: 5 },
+  shadowOpacity: 0.4,
+  shadowRadius: 10,
+  elevation: 5,
+},
   disabledButton: {
     backgroundColor: "#888",
   },
   proceedText: {
-    color: "white",
-    fontSize: 18,
-    fontWeight: "bold",
-  },
+  color: "white",
+  fontSize: 18,
+  fontWeight: "bold",
+  letterSpacing: 0.5,
+},
   loadingOverlay: {
     position: "absolute",
     top: 0,
@@ -559,17 +606,18 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   modalTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 10,
-    color: "#222",
-  },
+  fontSize: 20,
+  fontWeight: "700",
+  color: "#222",
+},
   map: {
-    width: "100%",
-    height: 200,
-    marginVertical: 10,
-    borderRadius: 8,
-  },
+  width: "100%",
+  height: 220,
+  borderRadius: 12,
+  overflow: "hidden",
+  borderWidth: 1,
+  borderColor: "#ccc",
+},
   modalButtons: {
     flexDirection: "row",
     marginTop: 15,
@@ -592,25 +640,24 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   subtotal: {
-    fontSize: 15,
-    fontWeight: "500",
-    color: "#555",
-    fontWeight: "bold",
-  },
-  swipeDeleteButton: {
-  backgroundColor: '#ff4d4d',
-  justifyContent: 'center',
-  alignItems: 'center',
-  width: 80,
-  height: '100%',
-  borderTopRightRadius: 12,
-  borderBottomRightRadius: 12,
+  fontSize: 16,
+  color: "#111",
+  marginTop: 4,
+},
+swipeDeleteButton: {
+  backgroundColor: "#ff3b30",
+  justifyContent: "center",
+  alignItems: "center",
+  width: 90,
+  borderTopRightRadius: 16,
+  borderBottomRightRadius: 16,
 },
 swipeDeleteText: {
-  color: '#fff',
-  fontWeight: 'bold',
-  fontSize: 14,
+  color: "#fff",
+  fontSize: 15,
+  fontWeight: "600",
 },
+
 
 });
 

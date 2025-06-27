@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import { RouteProp, useNavigation } from '@react-navigation/native';
 import { RootStackParamList } from '../types';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -17,46 +17,69 @@ const PaymentSuccess: React.FC<Props> = ({ route }) => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>🎉 Your Order Has Been Placed!</Text>
-      <Text style={styles.subtitle}>Thank you for shopping with us ❤️</Text>
-      <Text style={styles.subtitle}>Your order will arrive in few minutes!</Text>
+      <Text style={styles.emoji}>✅</Text>
+      <Text style={styles.title}>Order Confirmed!</Text>
+      <Text style={styles.subtitle}>Thank you for shopping with us.</Text>
+      <Text style={styles.subText}>Your order is on its way 🚚</Text>
 
       <View style={styles.card}>
         <View style={styles.row}>
-          <Text style={styles.label}>Payment Method:</Text>
-          <Text style={styles.value}>{paymentDetails.paymentMethod.toUpperCase()}</Text>
+          <Text style={styles.label}>Order ID</Text>
+          <Text style={styles.value}>{paymentDetails._id || 'N/A'}</Text>
         </View>
 
         <View style={styles.row}>
-          <Text style={styles.label}>Base Amount:</Text>
-          <Text style={styles.value}>₹{paymentDetails.totalAmount}</Text>
+          <Text style={styles.label}>Payment</Text>
+          <Text style={styles.value}>{paymentDetails.paymentMethod?.toUpperCase()}</Text>
         </View>
-
-        
 
         <View style={styles.row}>
-          <Text style={styles.totalLabel}>Note: </Text>
-          <Text style={styles.total}>Please Pay ₹{paymentDetails.totalAmount} to Delivery Partner</Text>
-        </View>
-        
-
-        <View style={styles.section}>
-          <Text style={styles.label}>Delivery Address:</Text>
-          <Text style={styles.address}>{address}</Text>
+          <Text style={styles.label}>Amount</Text>
+          <Text style={styles.value}>₹{paymentDetails.totalAmount }</Text>
         </View>
 
+        <View style={styles.row}>
+          <Text style={styles.label}>ETA</Text>
+          <Text style={styles.value}>15–20 mins</Text>
+        </View>
+
+        <View style={styles.divider} />
+
+        <Text style={styles.noteText}>
+          Note: Please pay <Text style={styles.noteAmount}>₹{paymentDetails.totalAmount }</Text> to the delivery partner upon arrival of your order.
+        </Text>
+
         <View style={styles.section}>
-          <Text style={styles.label}>Address Details:</Text>
-          <View style={styles.jsonBox}>
-            <Text style={styles.jsonText}>
-              {JSON.stringify(addressDetails, null, 2)}
-            </Text>
+          <Text style={styles.label}>Delivery Address</Text>
+          <Text style={styles.addressText}>{address}</Text>
+        </View>
+
+        {addressDetails?.landmark || addressDetails?.floor || addressDetails?.buildingName ? (
+          <View style={styles.section}>
+            <Text style={styles.label}>More Details</Text>
+            {addressDetails?.buildingName && <Text style={styles.addressLine}>Building: {addressDetails.buildingName}</Text>}
+            {addressDetails?.floor && <Text style={styles.addressLine}>Floor: {addressDetails.floor}</Text>}
+            {addressDetails?.landmark && <Text style={styles.addressLine}>Landmark: {addressDetails.landmark}</Text>}
+             {addressDetails?.recipientPhoneNumber && <Text style={styles.addressLine}>Phone : {addressDetails.recipientPhoneNumber}</Text>}
           </View>
-        </View>
+        ) : null}
       </View>
+      <TouchableOpacity
+  style={[styles.button, { backgroundColor: '#111827', marginBottom: 14 }]}
+  onPress={() =>
+    navigation.navigate('OrderInvoice', {
+      orderDetails: paymentDetails,
+      address,
+      addressDetails,
+    })
+  }
+>
+  <Text style={styles.buttonText}>🧾 View Invoice</Text>
+</TouchableOpacity>
+
 
       <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Home')}>
-        <Text style={styles.buttonText}>🛍️ Continue Shopping</Text>
+        <Text style={styles.buttonText}>🛒 Continue Shopping</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -64,26 +87,35 @@ const PaymentSuccess: React.FC<Props> = ({ route }) => {
 
 export default PaymentSuccess;
 
-
 const styles = StyleSheet.create({
   container: {
     padding: 24,
-    backgroundColor: '#f7f9fc',
+    backgroundColor: '#f9fafc',
     flexGrow: 1,
     justifyContent: 'center',
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#28a745',
+  emoji: {
+    fontSize: 48,
     textAlign: 'center',
-    marginBottom: 6,
+    marginBottom: 10,
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    color: '#16a34a',
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,
     textAlign: 'center',
-    marginBottom: 20,
-    color: '#555',
+    color: '#4b5563',
+    marginBottom: 6,
+  },
+  subText: {
+    fontSize: 15,
+    textAlign: 'center',
+    color: '#6b7280',
+    marginBottom: 24,
   },
   card: {
     backgroundColor: '#ffffff',
@@ -93,7 +125,7 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.1,
-    shadowRadius: 8,
+    shadowRadius: 6,
     elevation: 4,
   },
   row: {
@@ -105,46 +137,47 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   label: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
-    color: '#444',
+    color: '#374151',
   },
   value: {
-    fontSize: 16,
-    color: '#333',
-  },
-  totalLabel: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#222',
-  },
-  total: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#007bff',
-  },
-  address: {
     fontSize: 15,
-    color: '#444',
-    marginTop: 6,
+    color: '#111827',
+    fontWeight: '500',
   },
-  jsonBox: {
-    backgroundColor: '#f0f4f7',
-    padding: 12,
-    borderRadius: 8,
-    marginTop: 6,
+  noteText: {
+    marginTop: 14,
+    fontSize: 15,
+    color: '#1f2937',
+    fontWeight: '500',
   },
-  jsonText: {
-    fontSize: 13,
-    color: '#333',
-    fontFamily: Platform.OS === 'android' ? 'monospace' : 'Courier',
+  noteAmount: {
+    color: '#1d4ed8',
+    fontWeight: '700',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#e5e7eb',
+    marginVertical: 12,
+  },
+  addressText: {
+    fontSize: 15,
+    color: '#374151',
+    marginTop: 6,
+    lineHeight: 22,
+  },
+  addressLine: {
+    fontSize: 14,
+    color: '#4b5563',
+    marginTop: 4,
   },
   button: {
-    backgroundColor: '#007bff',
-    paddingVertical: 16,
+    backgroundColor: '#4F46E5',
+    paddingVertical: 14,
     borderRadius: 30,
     alignItems: 'center',
-    shadowColor: '#007bff',
+    shadowColor: '#6366f1',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 6,
@@ -156,4 +189,3 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
-
