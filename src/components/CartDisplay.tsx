@@ -17,6 +17,8 @@ import MapView, { Marker } from "react-native-maps";
 import { useNavigation } from "@react-navigation/native";
 import Geolocation from "@react-native-community/geolocation";
 import Icon from "react-native-vector-icons/Ionicons";
+import { useLocation } from '../context/LocationContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   check,
   request,
@@ -121,6 +123,14 @@ const CartDisplay = () => {
   const [loadingLocation, setLoadingLocation] = useState(false);
   const [locationError, setLocationError] = useState("");
   const [addressError, setAddressError] = useState("");
+   const [selectedAddress, setSelectedAddress] = useState<{
+  address: string;
+  latitude: number;
+  longitude: number;
+} | null>(null);
+
+const { location: confirmedLocation, setConfirmedLocation } = useLocation();
+
   const navigation = useNavigation();
 
   // Memoize totalPrice calculation
@@ -216,7 +226,7 @@ const CartDisplay = () => {
     );
   }, [requestLocationPermission]);
 
-  const handleConfirmLocation = useCallback(async () => {
+ const handleConfirmLocation = useCallback(async () => {
   if (!location) {
     setAddressError("No location selected");
     return;
@@ -241,12 +251,17 @@ const CartDisplay = () => {
     }
 
     setModalVisible(false);
-    navigation.navigate("Checkout", { address, location });
+
+    const newAddr = { address, latitude: location.latitude, longitude: location.longitude };
+    setSelectedAddress(newAddr);
+
+    navigation.navigate("Checkout", newAddr);
   } catch (error) {
     console.error("Error fetching address:", error);
     setAddressError("Failed to get address. Try again.");
   }
 }, [location, navigation]);
+
 
 
   const renderItem = useCallback(
@@ -295,6 +310,25 @@ const CartDisplay = () => {
         <Text style={styles.totalText}>Total:</Text>
         <Text style={styles.totalPrice}>₹{totalPrice}</Text>
       </View>
+      {confirmedLocation?.address && (
+  <TouchableOpacity
+  style={[styles.proceedButton, !confirmedLocation?.address && styles.disabledButton]}
+  onPress={() => {
+    if (confirmedLocation) {
+      const { address, latitude, longitude } = confirmedLocation;
+      setSelectedAddress({ address, latitude, longitude });
+      navigation.navigate("Checkout", { address, latitude, longitude });
+    }
+  }}
+  disabled={!confirmedLocation?.address}
+  activeOpacity={0.8}
+>
+  <Text style={styles.proceedText}>Use Saved Address</Text>
+</TouchableOpacity>
+
+)}
+
+      
 
       {locationError ? (
         <View style={styles.errorContainer}>
@@ -657,6 +691,25 @@ swipeDeleteText: {
   fontSize: 15,
   fontWeight: "600",
 },
+savedAddressContainer: {
+    backgroundColor: "#e6ffed",
+    borderWidth: 1,
+    borderColor: "#a0d6b4",
+    padding: 15,
+    borderRadius: 12,
+    marginBottom: 15,
+  },
+  savedAddressTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#0a0a0a",
+    marginBottom: 6,
+  },
+  savedAddressText: {
+    fontSize: 14,
+    color: "#444",
+    marginBottom: 10,
+  },
 
 
 });

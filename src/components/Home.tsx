@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   ScrollView,
@@ -23,7 +23,16 @@ const Home = () => {
   const { cart } = useCart();
   const cartCount = cart.reduce((total, item) => total + item.quantity, 0);
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      navigation.navigate("LocationFetcher");
+    }, 2000); // 2 seconds
+
+    return () => clearTimeout(timer);
+  }, []);
+
   const onRefresh = useCallback(() => {
+
     setRefreshing(true);
     setRefreshKey((prev) => prev + 1);
     setTimeout(() => setRefreshing(false), 2000);

@@ -6,7 +6,9 @@ import { CartProvider } from './src/context/Cart';
 import SplashScreen from 'react-native-splash-screen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Login from './src/components/Login';
-import { View, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator} from 'react-native';
+import { LocationProvider } from './src/context/LocationContext';
+
 
 const App = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -37,6 +39,9 @@ const App = () => {
     initializeApp();
   }, []);
 
+  
+
+
   if (isLoading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -47,9 +52,11 @@ const App = () => {
 
   return (
     <CartProvider>
+      <LocationProvider>
       <NavigationContainer>
         {isAuthenticated ? <AppNavigator /> : <Login />}
       </NavigationContainer>
+      </LocationProvider>
     </CartProvider>
   );
 };

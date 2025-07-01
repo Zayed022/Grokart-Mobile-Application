@@ -15,6 +15,7 @@ import AddressDetails from '../components/AddressDetails';
 import Payment from '../components/Payment';
 import PaymentSuccess from '../components/PaymentSuccess';
 import OrderInvoice from '../components/OrderInvoice';
+import LocationFetcher from '../components/LocationFetcher';
 
 const Stack = createStackNavigator();
 
@@ -38,6 +39,7 @@ const AppNavigator = () => {
       <Stack.Screen name="Payment" component={Payment} />
       <Stack.Screen name="PaymentSuccess" component={PaymentSuccess} />
       <Stack.Screen name="OrderInvoice" component={OrderInvoice} />
+      <Stack.Screen name="LocationFetcher" component={LocationFetcher} />
 
     </Stack.Navigator>
   );
