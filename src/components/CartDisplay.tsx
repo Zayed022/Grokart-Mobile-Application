@@ -12,6 +12,7 @@ import {
   Alert,
   
 } from "react-native";
+import { ScrollView } from "react-native";
 import { useCart } from "../context/Cart";
 import MapView, { Marker } from "react-native-maps";
 import { useNavigation } from "@react-navigation/native";
@@ -116,6 +117,8 @@ const CartItem = React.memo(
   }
 );
 
+// ... (All imports remain the same)
+
 const CartDisplay = () => {
   const { cart, updateQuantity, removeFromCart } = useCart();
   const [modalVisible, setModalVisible] = useState(false);
@@ -123,17 +126,15 @@ const CartDisplay = () => {
   const [loadingLocation, setLoadingLocation] = useState(false);
   const [locationError, setLocationError] = useState("");
   const [addressError, setAddressError] = useState("");
-   const [selectedAddress, setSelectedAddress] = useState<{
-  address: string;
-  latitude: number;
-  longitude: number;
-} | null>(null);
+  const [selectedAddress, setSelectedAddress] = useState<{
+    address: string;
+    latitude: number;
+    longitude: number;
+  } | null>(null);
 
-const { location: confirmedLocation, setConfirmedLocation } = useLocation();
-
+  const { location: confirmedLocation, setConfirmedLocation } = useLocation();
   const navigation = useNavigation();
 
-  // Memoize totalPrice calculation
   const totalPrice = useMemo(() => {
     return cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
   }, [cart]);
@@ -159,7 +160,6 @@ const { location: confirmedLocation, setConfirmedLocation } = useLocation();
 
   const requestLocationPermission = useCallback(async () => {
     let permissionStatus;
-
     if (Platform.OS === "android") {
       permissionStatus = await check(PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION);
       if (permissionStatus !== RESULTS.GRANTED) {
@@ -173,9 +173,7 @@ const { location: confirmedLocation, setConfirmedLocation } = useLocation();
     }
 
     if (permissionStatus === RESULTS.DENIED || permissionStatus === RESULTS.BLOCKED) {
-      setLocationError(
-        "Location permission is required to proceed. Please enable it in settings."
-      );
+      setLocationError("Location permission is required to proceed. Please enable it in settings.");
       return false;
     }
 
@@ -197,8 +195,6 @@ const { location: confirmedLocation, setConfirmedLocation } = useLocation();
       return;
     }
 
-    
-
     Geolocation.getCurrentPosition(
       (position) => {
         console.log("Location Fetched");
@@ -217,60 +213,52 @@ const { location: confirmedLocation, setConfirmedLocation } = useLocation();
         if (error.code === 4) errorMessage = "App context lost. Restart the app.";
         setLocationError(errorMessage);
       },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000,
-        distanceFilter: 0,
-    
-    
-    
-       }
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000, distanceFilter: 0 }
     );
   }, [requestLocationPermission]);
 
- const handleConfirmLocation = useCallback(async () => {
-  if (!location) {
-    setAddressError("No location selected");
-    return;
-  }
-
-  try {
-    const response = await axios.get(
-      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${location.latitude}&lon=${location.longitude}`
-    );
-
-    const address = response.data.display_name || "";
-    const isInBhiwandi = address.toLowerCase().includes("bhiwandi");
-
-    if (!isInBhiwandi) {
-      setModalVisible(false);
-      Alert.alert(
-        "Service Unavailable",
-        "Sorry, we are currently not available in your area.",
-        [{ text: "OK" }]
-      );
+  const handleConfirmLocation = useCallback(async () => {
+    if (!location) {
+      setAddressError("No location selected");
       return;
     }
 
-    setModalVisible(false);
+    try {
+      const response = await axios.get(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${location.latitude}&lon=${location.longitude}`
+      );
 
-    const newAddr = { address, latitude: location.latitude, longitude: location.longitude };
-    setSelectedAddress(newAddr);
+      const address = response.data.display_name || "";
+      const isInBhiwandi = address.toLowerCase().includes("bhiwandi");
 
-    navigation.navigate("Checkout", newAddr);
-  } catch (error) {
-    console.error("Error fetching address:", error);
-    setAddressError("Failed to get address. Try again.");
-  }
-}, [location, navigation]);
+      if (!isInBhiwandi) {
+        setModalVisible(false);
+        Alert.alert("Service Unavailable", "Sorry, we are currently not available in your area.");
+        return;
+      }
+
+      setModalVisible(false);
+      const newAddr = { address, latitude: location.latitude, longitude: location.longitude };
+      setSelectedAddress(newAddr);
+      navigation.navigate("Checkout", {
+  address,
+  location: {
+    latitude: location.latitude,
+    longitude: location.longitude,
+  },
+});
 
 
+
+    } catch (error) {
+      console.error("Error fetching address:", error);
+      setAddressError("Failed to get address. Try again.");
+    }
+  }, [location, navigation]);
 
   const renderItem = useCallback(
     ({ item }) => (
-      <CartItem
-        item={item}
-        updateQuantity={updateQuantity}
-        removeFromCart={removeFromCart}
-      />
+      <CartItem item={item} updateQuantity={updateQuantity} removeFromCart={removeFromCart} />
     ),
     [updateQuantity, removeFromCart]
   );
@@ -284,8 +272,8 @@ const { location: confirmedLocation, setConfirmedLocation } = useLocation();
   }
 
   return (
-    <>
-     {/* Navbar */}
+  <>
+    {/* Navbar */}
     <View style={styles.navbar}>
       <TouchableOpacity onPress={() => navigation.goBack()}>
         <Icon name="arrow-back" size={24} color="#000" />
@@ -293,94 +281,102 @@ const { location: confirmedLocation, setConfirmedLocation } = useLocation();
       <Text style={styles.navbarTitle}>Your Cart</Text>
       <View style={{ width: 24 }} />
     </View>
-    <View style={styles.container}>
+
+    <ScrollView
+      contentContainerStyle={styles.scrollContainer}
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
+    >
       <Text style={styles.header}>Shopping Cart</Text>
 
-      <FlatList
-        data={cart}
-        keyExtractor={(item) => item._id}
-        renderItem={renderItem}
-        initialNumToRender={5}
-        maxToRenderPerBatch={5}
-        windowSize={5}
-        showsVerticalScrollIndicator={false}
-      />
+      {/* Cart Items */}
+      {cart.map((item) => (
+        <CartItem
+          key={item._id}
+          item={item}
+          updateQuantity={updateQuantity}
+          removeFromCart={removeFromCart}
+        />
+      ))}
 
+      {/* Total Price */}
       <View style={styles.totalContainer}>
         <Text style={styles.totalText}>Total:</Text>
         <Text style={styles.totalPrice}>₹{totalPrice}</Text>
       </View>
+
+      {/* Address Section */}
+      <Text style={{ fontSize: 16, fontWeight: "bold", marginTop: 10, marginBottom: 5 }}>
+        Delivery Address
+      </Text>
+
+      {/* Saved Address Block */}
       {confirmedLocation?.address && (
-  <TouchableOpacity
-  style={[styles.proceedButton, !confirmedLocation?.address && styles.disabledButton]}
-  onPress={() => {
-    if (confirmedLocation) {
-      const { address, latitude, longitude } = confirmedLocation;
-      setSelectedAddress({ address, latitude, longitude });
-      navigation.navigate("Checkout", { address, latitude, longitude });
-    }
-  }}
-  disabled={!confirmedLocation?.address}
-  activeOpacity={0.8}
->
-  <Text style={styles.proceedText}>Use Saved Address</Text>
-</TouchableOpacity>
+        <View style={styles.savedAddressContainer}>
+          <Text style={styles.savedAddressTitle}>Saved Address:</Text>
+          <Text style={styles.savedAddressText}>{confirmedLocation.address}</Text>
+          <TouchableOpacity
+            style={styles.savedButton}
+            onPress={() => {
+              const { address, latitude, longitude } = confirmedLocation;
+              setSelectedAddress({ address, latitude, longitude });
+              navigation.navigate("Checkout", {
+                address,
+                location: { latitude, longitude },
+              });
+            }}
+          >
+            <Text style={styles.proceedText}>Deliver to this Address</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
-)}
+      {/* Divider */}
+      <Text
+        style={{
+          fontSize: 15,
+          fontWeight: "600",
+          marginBottom: 5,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        Or use your current location
+      </Text>
 
-      
-
+      {/* Location Error */}
       {locationError ? (
         <View style={styles.errorContainer}>
-          <Text
-            style={styles.errorText}
-            accessibilityLiveRegion="polite"
-            accessibilityRole="alert"
-          >
-            {locationError}
-          </Text>
-          <TouchableOpacity
-            onPress={handleOpenSettings}
-            style={styles.retryButton}
-            activeOpacity={0.85}
-
-            accessibilityLabel="Open settings"
-            accessibilityHint="Opens device settings to enable location permission"
-          >
+          <Text style={styles.errorText}>{locationError}</Text>
+          <TouchableOpacity onPress={handleOpenSettings} style={styles.retryButton}>
             <Text style={styles.retryButtonText}>Open Settings</Text>
           </TouchableOpacity>
         </View>
       ) : null}
 
+      {/* Change Address Button */}
       <TouchableOpacity
         style={[styles.proceedButton, loadingLocation && styles.disabledButton]}
         onPress={handleGetLocation}
         disabled={loadingLocation}
-        activeOpacity={0.8}
-        accessibilityLabel="Proceed to checkout"
-        accessibilityHint="Fetches your location and proceeds to checkout"
       >
         <Text style={styles.proceedText}>
-          {loadingLocation ? "Getting Location..." : "Proceed to Checkout"}
+          {loadingLocation ? "Getting Location..." : "Change Address"}
         </Text>
       </TouchableOpacity>
 
+      {/* Spinner overlay */}
       {loadingLocation && (
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="large" color="#222" />
         </View>
       )}
 
-      <Modal
-        visible={modalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setModalVisible(false)}
-      >
+      {/* Location Confirmation Modal */}
+      <Modal visible={modalVisible} animationType="slide" transparent={true}>
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Confirm Your Location</Text>
-
             {location && (
               <MapView
                 style={styles.map}
@@ -390,48 +386,22 @@ const { location: confirmedLocation, setConfirmedLocation } = useLocation();
                   latitudeDelta: 0.01,
                   longitudeDelta: 0.01,
                 }}
-                liteMode={Platform.OS === "android"} // Optimize for Android
-                accessibilityLabel="Map showing your location"
-                accessibilityHint="Displays your current location on a map"
+                liteMode={Platform.OS === "android"}
               >
-                <Marker
-                  coordinate={{
-                    latitude: location.latitude,
-                    longitude: location.longitude,
-                  }}
-                  title="Your Location"
-                  accessibilityLabel="Your location marker"
-                />
+                <Marker coordinate={location} title="Your Location" />
               </MapView>
             )}
-
-            {addressError ? (
-              <Text
-                style={styles.errorText}
-                accessibilityLiveRegion="polite"
-                accessibilityRole="alert"
-              >
-                {addressError}
-              </Text>
-            ) : null}
-
+            {addressError ? <Text style={styles.errorText}>{addressError}</Text> : null}
             <View style={styles.modalButtons}>
               <TouchableOpacity
                 style={styles.cancelButton}
                 onPress={() => setModalVisible(false)}
-                activeOpacity={0.7}
-                accessibilityLabel="Cancel location selection"
-                accessibilityHint="Closes the location selection modal"
               >
                 <Text style={styles.buttonText}>Cancel</Text>
               </TouchableOpacity>
-
               <TouchableOpacity
                 style={styles.confirmButton}
                 onPress={handleConfirmLocation}
-                activeOpacity={0.7}
-                accessibilityLabel="Confirm location"
-                accessibilityHint="Confirms your selected location and proceeds to checkout"
               >
                 <Text style={styles.buttonText}>Confirm Location</Text>
               </TouchableOpacity>
@@ -439,10 +409,14 @@ const { location: confirmedLocation, setConfirmedLocation } = useLocation();
           </View>
         </View>
       </Modal>
-    </View>
-    </>
-  );
+    </ScrollView>
+  </>
+);
+
 };
+
+
+
 
 const styles = StyleSheet.create({
   navbar: {
@@ -483,74 +457,91 @@ const styles = StyleSheet.create({
     color: "#222",
   },
   cartItem: {
-    flexDirection: "row",
-    backgroundColor: "#f9f9f9",
-    borderRadius: 12,
-    padding: 15,
-    marginBottom: 12,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  itemImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 10,
-    marginRight: 15,
-  },
-  detailsContainer: {
-    flex: 1,
-  },
-  itemName: {
-  fontSize: 17,
-  fontWeight: "600",
-  color: "#222",
-},
-itemPrice: {
-  fontSize: 15,
-  color: "#666",
+  backgroundColor: "#fff",
+  borderRadius: 14,
+  padding: 14,
+  marginBottom: 16,
+  shadowColor: "#000",
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.06,
+  shadowRadius: 4,
+  elevation: 2,
+  borderWidth: 1,
+  borderColor: "rgba(0,0,0,0.04)",
+  flexDirection: "row",
+  alignItems: "flex-start",
 },
 
-  quantityContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 5,
-  },
-  quantityButton: {
-    backgroundColor: "#ddd",
-    padding: 6,
-    borderRadius: 16,
-    marginHorizontal: 10,
-    minWidth: 35,
-    alignItems: "center",
-    justifyContent: "center",
-    
-  },
-  buttonText: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#222",
-  },
-  quantity: {
-    fontSize: 18,
-    fontWeight: "500",
-    color: "#222",
-  },
-  removeButton: {
-    backgroundColor: "#ff4d4d",
-    borderRadius: 8,
-    padding: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  removeButtonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
+
+itemImage: {
+  width: 75,
+  height: 75,
+  borderRadius: 12,
+  marginRight: 12,
+},
+
+detailsContainer: {
+  flex: 1,
+  paddingRight: 6,
+},
+
+itemName: {
+  fontSize: 16,
+  fontWeight: "600",
+  color: "#222",
+  marginBottom: 4,
+},
+
+itemPrice: {
+  fontSize: 14,
+  color: "#666",
+},
+subtotal: {
+  fontSize: 15,
+  color: "#000",
+  fontWeight: "700",
+},
+
+quantityContainer: {
+  flexDirection: "row",
+  alignItems: "center",
+  marginTop: 10,
+},
+
+quantityButton: {
+  backgroundColor: "#f0f0f0",
+  paddingVertical: 4,
+  paddingHorizontal: 10,
+  borderRadius: 6,
+  marginHorizontal: 8,
+},
+
+buttonText: {
+  fontSize: 18,
+  fontWeight: "bold",
+  color: "#333",
+},
+
+quantity: {
+  fontSize: 16,
+  fontWeight: "500",
+  color: "#222",
+  minWidth: 24,
+  textAlign: "center",
+},
+
+removeButton: {
+  alignSelf: "flex-start",
+  marginLeft: 6,
+  padding: 4,
+},
+
+removeButtonText: {
+  fontSize: 18,
+  color: "#ff4d4d",
+  fontWeight: "bold",
+},
+
   totalContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -590,11 +581,23 @@ itemPrice: {
     fontWeight: "bold",
   },
   proceedButton: {
-  backgroundColor: "#ff4d4d",
-  padding: 16,
-  borderRadius: 15,
+  backgroundColor: "#F64242",
+  padding: 12,
+  borderRadius: 12,
   alignItems: "center",
-  marginTop: 25,
+  marginTop: 8,
+  shadowColor: "#ff4d4d",
+  shadowOffset: { width: 0, height: 5 },
+  shadowOpacity: 0.4,
+  shadowRadius: 10,
+  elevation: 5,
+},
+savedButton:{
+  backgroundColor: "#4CAF50",
+  padding: 12,
+  borderRadius: 12,
+  alignItems: "center",
+  marginTop: 6,
   shadowColor: "#ff4d4d",
   shadowOffset: { width: 0, height: 5 },
   shadowOpacity: 0.4,
@@ -710,6 +713,11 @@ savedAddressContainer: {
     color: "#444",
     marginBottom: 10,
   },
+  scrollContainer: {
+  padding: 20,
+  backgroundColor: "#fff",
+  paddingBottom: 40,
+}
 
 
 });

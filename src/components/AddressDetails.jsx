@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import Icon from "react-native-vector-icons/Ionicons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const AddressDetails = () => {
   const navigation = useNavigation();
@@ -30,6 +31,21 @@ const AddressDetails = () => {
 
   const scrollRef = useRef();
 
+  useEffect(() => {
+  (async () => {
+    try {
+      const saved = await AsyncStorage.getItem("userAddressDetails");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        setAddressDetails((prev) => ({ ...prev, ...parsed }));
+      }
+    } catch (err) {
+      console.log("Failed to load saved address", err);
+    }
+  })();
+}, []);
+
+
   const handleChange = (key, value) => {
     setAddressDetails((prev) => ({ ...prev, [key]: value }));
   };
@@ -45,11 +61,21 @@ const AddressDetails = () => {
     );
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!isComplete()) {
       Alert.alert("Error", "Please complete all required fields correctly.");
       return;
     }
+
+    try {
+      await AsyncStorage.setItem(
+        "userAddressDetails",
+        JSON.stringify(addressDetails)
+      );
+    } catch (err) {
+      console.log("Failed to save address", err);
+    }
+
     navigation.navigate("Payment", {
       address,
       location,
@@ -63,12 +89,27 @@ const AddressDetails = () => {
     });
   };
 
+  const clearSavedAddress = async () => {
+    try {
+      await AsyncStorage.removeItem("userAddressDetails");
+      setAddressDetails({
+        houseNumber: "",
+        floor: "",
+        buildingName: "",
+        landmark: "",
+        recipientName: "",
+        recipientPhoneNumber: "",
+      });
+    } catch (err) {
+      console.log("Failed to clear address", err);
+    }
+  };
+
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      {/* Navbar */}
       <View style={styles.navbar}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Icon name="arrow-back" size={24} color="#000" />
@@ -84,9 +125,6 @@ const AddressDetails = () => {
       >
         <Text style={styles.heading}>Address Details</Text>
 
-        
-
-        {/* Address Card */}
         <View style={styles.addressCard}>
           <View style={{ flex: 1 }}>
             <Text style={styles.addressText}>{address}</Text>
@@ -96,15 +134,14 @@ const AddressDetails = () => {
           </TouchableOpacity>
         </View>
 
-        {/* Info box */}
         <View style={styles.infoBox}>
           <Icon name="information-circle" size={18} color="#FFC107" />
           <Text style={styles.infoText}>
-            A detailed address helps our delivery partners reach your doorstep easily.
+            A detailed address helps our delivery partners reach your doorstep
+            easily.
           </Text>
         </View>
 
-        {/* Address Type */}
         <View style={styles.addressTypeWrapper}>
           {[
             { label: "Home", icon: "home-outline" },
@@ -137,9 +174,14 @@ const AddressDetails = () => {
           ))}
         </View>
 
-        {/* Input Fields */}
+        <TouchableOpacity onPress={clearSavedAddress}>
+          <Text style={{ color: "red", textAlign: "right", marginBottom: 10 }}>
+            Clear Saved Address
+          </Text>
+        </TouchableOpacity>
+
         {[
-          { key: "houseNumber", placeholder: "House No. *" },
+          { key: "houseNumber", placeholder: "House No. *(NA if not known)" },
           { key: "floor", placeholder: "Floor *" },
           { key: "buildingName", placeholder: "Building & Block No." },
           { key: "landmark", placeholder: "Landmark & Area Name (Optional)" },
@@ -169,7 +211,6 @@ const AddressDetails = () => {
           />
         ))}
 
-        {/* Save & Continue */}
         <TouchableOpacity
           style={[styles.saveButton, !isComplete() && styles.disabledButton]}
           onPress={handleSubmit}
@@ -207,11 +248,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     marginBottom: 10,
     color: "#222",
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    textAlign: "center"
-    
+    textAlign: "center",
   },
   infoBox: {
     flexDirection: "row",

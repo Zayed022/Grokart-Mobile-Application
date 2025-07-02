@@ -110,6 +110,7 @@ const PaymentScreen = () => {
             quantity: item.quantity,
             name: item.name,
             price: item.price,
+            description: item.description,
           })),
           totalAmount: Number(totalPrice),
           address,
