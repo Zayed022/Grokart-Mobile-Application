@@ -13,7 +13,7 @@ interface Props {
 
 const PaymentSuccess: React.FC<Props> = ({ route }) => {
   const navigation = useNavigation<NavigationProp>();
-  const { paymentDetails, address, addressDetails } = route.params;
+  const { paymentDetails, address, addressDetails,location } = route.params;
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -71,6 +71,7 @@ const PaymentSuccess: React.FC<Props> = ({ route }) => {
       orderDetails: paymentDetails,
       address,
       addressDetails,
+      location
     })
   }
 >

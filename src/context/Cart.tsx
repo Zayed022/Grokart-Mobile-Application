@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage"; // To persist cart data
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface CartItem {
   _id: string;
@@ -7,14 +7,16 @@ interface CartItem {
   price: number;
   image: string;
   quantity: number;
+  description?: string;
 }
 
 interface CartContextType {
   cart: CartItem[];
   addToCart: (product: Omit<CartItem, "quantity">) => void;
+  addMultipleToCart: (items: CartItem[]) => void;
   removeFromCart: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
-  clearCart: () => void; 
+  clearCart: () => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -22,7 +24,6 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [cart, setCart] = useState<CartItem[]>([]);
 
-  // Load cart from AsyncStorage when the app starts
   useEffect(() => {
     const loadCart = async () => {
       const storedCart = await AsyncStorage.getItem("cart");
@@ -33,7 +34,6 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loadCart();
   }, []);
 
-  // Save cart to AsyncStorage whenever it changes
   useEffect(() => {
     AsyncStorage.setItem("cart", JSON.stringify(cart));
   }, [cart]);
@@ -50,6 +50,25 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
+  const addMultipleToCart = (items: CartItem[]) => {
+    setCart((prevCart) => {
+      const updatedCart = [...prevCart];
+
+      items.forEach((newItem) => {
+        const existingItem = updatedCart.find(item => item._id === newItem._id);
+        if (existingItem) {
+          existingItem.quantity += newItem.quantity;
+        } else {
+          updatedCart.push({ ...newItem });
+        }
+      });
+
+      // Save updated cart to AsyncStorage
+      AsyncStorage.setItem("cart", JSON.stringify(updatedCart));
+      return updatedCart;
+    });
+  };
+
   const removeFromCart = (id: string) => {
     setCart((prevCart) => prevCart.filter((item) => item._id !== id));
   };
@@ -60,17 +79,26 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         ? prevCart.map((item) =>
             item._id === id ? { ...item, quantity } : item
           )
-        : prevCart.filter((item) => item._id !== id) // Remove item if quantity is 0
+        : prevCart.filter((item) => item._id !== id)
     );
   };
 
   const clearCart = () => {
-    setCart([]); // ✅ Clears the cart in the app state
-    AsyncStorage.removeItem("cart"); // ✅ Also clears the cart in AsyncStorage
+    setCart([]);
+    AsyncStorage.removeItem("cart");
   };
 
   return (
-    <CartContext.Provider value={{ cart, addToCart, removeFromCart, updateQuantity, clearCart }}>
+    <CartContext.Provider
+      value={{
+        cart,
+        addToCart,
+        addMultipleToCart,
+        removeFromCart,
+        updateQuantity,
+        clearCart,
+      }}
+    >
       {children}
     </CartContext.Provider>
   );

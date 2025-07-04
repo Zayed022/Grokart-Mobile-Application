@@ -20,6 +20,9 @@ import Geolocation from "@react-native-community/geolocation";
 import Icon from "react-native-vector-icons/Ionicons";
 import { useLocation } from '../context/LocationContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Ionicons from "react-native-vector-icons/Ionicons";
+import LinearGradient from "react-native-linear-gradient";
+
 import {
   check,
   request,
@@ -88,7 +91,7 @@ const CartItem = React.memo(
               accessibilityLabel="Decrease quantity"
               accessibilityHint={`Decrease the quantity of ${item.name}`}
             >
-              <Text style={styles.buttonText}>-</Text>
+              <Ionicons name="remove" size={18} color="#333" />
             </TouchableOpacity>
             <Text style={styles.quantity}>{item.quantity}</Text>
             <TouchableOpacity
@@ -98,7 +101,7 @@ const CartItem = React.memo(
               accessibilityLabel="Increase quantity"
               accessibilityHint={`Increase the quantity of ${item.name}`}
             >
-              <Text style={styles.buttonText}>+</Text>
+              <Ionicons name="add" size={18} color="#333" />
             </TouchableOpacity>
           </View>
         </View>
@@ -109,7 +112,8 @@ const CartItem = React.memo(
           accessibilityLabel={`Remove ${item.name} from cart`}
           accessibilityHint="Removes this item from your cart"
         >
-          <Text style={styles.removeButtonText}>✕</Text>
+          <Ionicons name="trash-outline" size={20} color="#ff4d4d" />
+
         </TouchableOpacity>
       </View>
       </Swipeable>
@@ -142,6 +146,8 @@ const CartDisplay = () => {
   useEffect(() => {
     checkLocationPermission();
   }, []);
+
+  
 
   const checkLocationPermission = useCallback(async () => {
     try {
@@ -282,6 +288,7 @@ const CartDisplay = () => {
       <View style={{ width: 24 }} />
     </View>
 
+    <View style = {styles.screenBackground}>
     <ScrollView
       contentContainerStyle={styles.scrollContainer}
       keyboardShouldPersistTaps="handled"
@@ -410,6 +417,7 @@ const CartDisplay = () => {
         </View>
       </Modal>
     </ScrollView>
+    </View>
   </>
 );
 
@@ -456,92 +464,110 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: "#222",
   },
+  screenBackground: {
+    flex: 1,
+    backgroundColor: "#f8f9fa", // Light subtle gray background for depth
+  },
+
   cartItem: {
-  backgroundColor: "#fff",
-  borderRadius: 14,
-  padding: 14,
-  marginBottom: 16,
-  shadowColor: "#000",
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.06,
-  shadowRadius: 4,
-  elevation: 2,
-  borderWidth: 1,
-  borderColor: "rgba(0,0,0,0.04)",
-  flexDirection: "row",
-  alignItems: "flex-start",
-},
+    flexDirection: "row",
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 18,
+    marginHorizontal: 10,
+    shadowColor: "#000",
+  shadowOffset: { width: 0, height: 3 },
+  shadowOpacity: 0.08,
+  shadowRadius: 6,
+  elevation: 6, // higher for more pop on Android
+  transform: [{ scale: 0.98 }],
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.05)",
+    
+  },
 
+  itemImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 12,
+    marginRight: 14,
+    backgroundColor: "#f0f0f0",
+  },
 
-itemImage: {
-  width: 75,
-  height: 75,
-  borderRadius: 12,
-  marginRight: 12,
-},
+  detailsContainer: {
+    flex: 1,
+    paddingRight: 6,
+  },
 
-detailsContainer: {
-  flex: 1,
-  paddingRight: 6,
-},
+  itemName: {
+    fontSize: 16.5,
+    fontWeight: "600",
+    color: "#212121",
+    marginBottom: 4,
+  },
 
-itemName: {
-  fontSize: 16,
-  fontWeight: "600",
-  color: "#222",
-  marginBottom: 4,
-},
+  itemPrice: {
+    fontSize: 14,
+    color: "#6c757d",
+  },
 
-itemPrice: {
-  fontSize: 14,
-  color: "#666",
-},
-subtotal: {
-  fontSize: 15,
-  color: "#000",
-  fontWeight: "700",
-},
+  subtotal: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#000",
+    marginTop: 6,
+  },
 
-quantityContainer: {
-  flexDirection: "row",
-  alignItems: "center",
-  marginTop: 10,
-},
+  quantityContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 12,
+  },
 
-quantityButton: {
-  backgroundColor: "#f0f0f0",
-  paddingVertical: 4,
-  paddingHorizontal: 10,
-  borderRadius: 6,
-  marginHorizontal: 8,
-},
+  quantityButton: {
+    backgroundColor: "#e9ecef",
+    paddingVertical: 5,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    marginHorizontal: 8,
+    minWidth: 32,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 
-buttonText: {
-  fontSize: 18,
-  fontWeight: "bold",
-  color: "#333",
-},
+  buttonText: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#333",
+  },
 
-quantity: {
-  fontSize: 16,
-  fontWeight: "500",
-  color: "#222",
-  minWidth: 24,
-  textAlign: "center",
-},
+  quantity: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#222",
+    minWidth: 28,
+    textAlign: "center",
+    backgroundColor: "#f1f3f5",
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    overflow: "hidden",
+  },
 
-removeButton: {
-  alignSelf: "flex-start",
-  marginLeft: 6,
-  padding: 4,
-},
+  removeButton: {
+    alignSelf: "flex-start",
+    padding: 6,
+    marginLeft: 4,
+    borderRadius: 8,
+    backgroundColor: "rgba(255,77,77,0.1)",
+  },
 
-removeButtonText: {
-  fontSize: 18,
-  color: "#ff4d4d",
-  fontWeight: "bold",
-},
-
+  removeButtonText: {
+    fontSize: 16,
+    color: "#ff4d4d",
+    fontWeight: "600",
+  },
   totalContainer: {
     flexDirection: "row",
     justifyContent: "space-between",

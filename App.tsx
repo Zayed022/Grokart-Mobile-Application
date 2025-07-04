@@ -8,6 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Login from './src/components/Login';
 import { View, ActivityIndicator} from 'react-native';
 import { LocationProvider } from './src/context/LocationContext';
+import { OrderProvider } from './src/context/OrderContext';
 
 
 const App = () => {
@@ -51,6 +52,7 @@ const App = () => {
   }
 
   return (
+    <OrderProvider>
     <CartProvider>
       <LocationProvider>
       <NavigationContainer>
@@ -58,6 +60,7 @@ const App = () => {
       </NavigationContainer>
       </LocationProvider>
     </CartProvider>
+    </OrderProvider>
   );
 };
 

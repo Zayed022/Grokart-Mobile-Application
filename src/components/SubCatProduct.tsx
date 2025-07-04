@@ -6,6 +6,8 @@ import {
   Image,
   StyleSheet,
   TouchableOpacity,
+  ScrollView,
+  Pressable,
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useCart } from "../context/Cart";
@@ -138,6 +140,7 @@ const SubCatProduct = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
   const [refreshing, setRefreshing] = useState<boolean>(false);
+  const cartCount = cart.reduce((total, item) => total + item.quantity, 0);
 
   const cartLookup = useMemo(() => {
     const lookup: { [key: string]: any } = {};
@@ -356,7 +359,56 @@ const SubCatProduct = () => {
         </View>
       )}
     </View>
-    <CartBar />
+     {cartCount > 0 && (
+  <Pressable
+    style={styles.cartBarContainer}
+    android_ripple={{ color: '#f0fdfa' }}
+    onPress={() => navigation.navigate('Cart')}
+  >
+    {/* Banner */}
+    <View style={styles.bannerRow}>
+      <Text style={styles.bannerEmoji}>🎉</Text>
+      <Text style={styles.bannerText}>
+        Hooray! <Text style={styles.bold}>FREE DELIVERY</Text> unlocked!
+      </Text>
+    </View>
+
+    {/* Divider */}
+    <View style={styles.divider} />
+
+    {/* Cart Row */}
+    <View style={styles.cartContent}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.imageRow}
+      >
+        {cart.slice(0, 5).map((item, index) => (
+          <Image
+            key={index}
+            source={{ uri: item.image || 'https://via.placeholder.com/40' }}
+            style={styles.cartImage}
+            resizeMode="cover"
+          />
+        ))}
+      </ScrollView>
+
+      <View style={styles.itemInfo}>
+        <Text style={styles.itemCount}>
+          {cartCount} Item{cartCount > 1 ? 's' : ''}
+        </Text>
+        <Text style={styles.savings}>
+          You save ₹ 0
+        </Text>
+      </View>
+
+      <View style={styles.cartButton}>
+        <Text style={styles.buttonText}>Go to cart</Text>
+      </View>
+    </View>
+  </Pressable>
+)}
+
     </>
   );
 };
@@ -531,6 +583,95 @@ disabledButtonText: {
   fontSize: 14,
   fontWeight: "bold",
 },
+ cartBarContainer: {
+  position: 'absolute',
+  bottom: 0,
+  left: 0,
+  right: 0,
+  backgroundColor: '#fff',
+  borderTopLeftRadius: 16,
+  borderTopRightRadius: 16,
+  paddingVertical: 22,
+  paddingHorizontal: 14,
+  elevation: 20,
+  shadowColor: '#000',
+  shadowOpacity: 0.1,
+  shadowRadius: 8,
+  shadowOffset: { width: 0, height: -2 },
+  zIndex: 999,
+},
+bannerRow: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  marginBottom: 6,
+},
+
+bannerEmoji: {
+  fontSize: 16,
+  marginRight: 6,
+},
+
+bannerText: {
+  fontSize: 13,
+  color: '#111',
+},
+
+
+bold: {
+  fontWeight: 'bold',
+},
+
+divider: {
+  height: 1,
+  backgroundColor: '#ddd',
+  marginBottom: 8,
+},
+
+cartContent: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+},
+
+imageRow: {
+  flexDirection: 'row',
+  marginRight: 10,
+  maxWidth: 120,
+},
+
+cartImage: {
+  width: 36,
+  height: 36,
+  borderRadius: 8,
+  marginRight: 6,
+  borderWidth: 1,
+  borderColor: '#eee',
+},
+
+itemInfo: {
+  flex: 1,
+  justifyContent: 'center',
+},
+
+itemCount: {
+  fontSize: 14,
+  fontWeight: '600',
+  color: '#111',
+},
+
+savings: {
+  fontSize: 12,
+  color: '#10B981',
+},
+
+cartButton: {
+  backgroundColor: '#10B981',
+  paddingHorizontal: 18,
+  paddingVertical: 10,
+  borderRadius: 10,
+},
+
+
 
 });
 

@@ -19,7 +19,7 @@ interface Props {
 
 const OrderInvoice: React.FC<Props> = ({ route }) => {
   const navigation = useNavigation<NavigationProp>();
-  const { orderDetails, address, addressDetails } = route.params;
+  const { orderDetails, address, addressDetails, location } = route.params;
 
   const [supportVisible, setSupportVisible] = useState(false);
 
@@ -29,52 +29,110 @@ const OrderInvoice: React.FC<Props> = ({ route }) => {
   };
 
   const generatePDF = async () => {
-    const DELIVERY_FEE = 15;
-    const HANDLING_FEE = 5;
-    const GSTCHARGES = 2;
+  const DELIVERY_FEE = 15;
+  const HANDLING_FEE = 7;
+  const GST = 2;
+  const COD_CHARGE = orderDetails.paymentMethod === 'COD' ? 25 : 0;
 
-    const html = `
-      <h1>Grokart Invoice</h1>
+  const subtotal = orderDetails.totalAmount - COD_CHARGE;
+  const itemsTotal = subtotal - (DELIVERY_FEE + HANDLING_FEE + GST);
+
+  const formatDate = (date: string) => new Date(date).toLocaleString();
+
+  const html = `
+    <html>
+    <head>
+      <style>
+        body { font-family: Arial, sans-serif; padding: 24px; }
+        h1, h2, h3 { color: #1f2937; }
+        p, td, th { font-size: 12px; color: #111827; }
+        table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        th { background-color: #f3f4f6; }
+        .summary td { border: none; padding: 4px 0; }
+        .summary td.label { font-weight: bold; color: #374151; }
+        .summary td.total { font-weight: bold; font-size: 14px; color: #1d4ed8; }
+        .divider { border-top: 1px solid #e5e7eb; margin: 16px 0; }
+        .center { text-align: center; color: #6b7280; font-size: 11px; margin-top: 16px; }
+      </style>
+    </head>
+    <body>
+      <h1 style="text-align:center;">Grokart</h1>
+      <p style="text-align:center;color:#6b7280;">15-minute grocery delivery in Bhiwandi</p>
+      <div class="divider"></div>
+      <h2>Order Invoice</h2>
       <p><strong>Order ID:</strong> ${orderDetails._id}</p>
       <p><strong>Date:</strong> ${formatDate(orderDetails.createdAt)}</p>
       <p><strong>Payment Method:</strong> ${orderDetails.paymentMethod.toUpperCase()}</p>
-      <hr/>
-      <h2>Items Ordered</h2>
-      ${orderDetails.items.map((item: any) =>
-        `<p>${item.name} - ${item.quantity} x ₹${item.price} = ₹${item.quantity * item.price}</p>`
-      ).join('')}
-      <hr/>
-      <p><strong>Delivery Fee:</strong> ₹${DELIVERY_FEE}</p>
-      <p><strong>Product Handling Fee:</strong> ₹${HANDLING_FEE}</p>
-      <p><strong>GST & Charges:</strong> ₹${GSTCHARGES}</p>
-      <h3>Total: ₹${orderDetails.totalAmount}</h3>
-      <hr/>
-      <h3>Delivery Address:</h3>
+      <p><strong>Payment Status:</strong> ${orderDetails.paymentStatus}</p>
+
+      <h3>Items Ordered</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Qty</th>
+            <th>Desc</th>
+            <th>Price</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${orderDetails.items.map((item: any) => `
+            <tr>
+              <td>${item.name}</td>
+              <td>${item.quantity}</td>
+              <td>${item.description || '-'}</td>
+              <td>₹${item.price}</td>
+              <td>₹${item.quantity * item.price}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+
+      <h3>Charges Summary</h3>
+      <table class="summary">
+        <tr><td class="label">Items Total:</td><td>₹${itemsTotal}</td></tr>
+        <tr><td class="label">Delivery Fee:</td><td>₹${DELIVERY_FEE}</td></tr>
+        <tr><td class="label">Handling Fee:</td><td>₹${HANDLING_FEE}</td></tr>
+        <tr><td class="label">GST & Charges:</td><td>₹${GST}</td></tr>
+        <tr><td class="label">Subtotal:</td><td>₹${subtotal}</td></tr>
+        ${COD_CHARGE > 0 ? `<tr><td class="label">COD Charges:</td><td>₹${COD_CHARGE}</td></tr>` : ''}
+        <tr><td class="label total">Total Amount:</td><td class="total">₹${orderDetails.totalAmount}</td></tr>
+      </table>
+
+      <h3>Delivery Details</h3>
       <p>${address}</p>
-      ${addressDetails?.buildingName ? `<p> Building: ${addressDetails.buildingName}</p>` : ''}
-      ${addressDetails?.floor ? `<p> Floor: ${addressDetails.floor}</p>` : ''}
-      ${addressDetails?.landmark ? `<p> Landmark: ${addressDetails.landmark}</p>` : ''}
-      ${addressDetails?.recipientPhoneNumber ? `<p> Phone: ${addressDetails.recipientPhoneNumber}</p>` : ''}
-    `;
+      <p>House: ${addressDetails?.houseNumber || '-'}</p>
+      <p>Building: ${addressDetails?.building || '-'}</p>
+      <p>Floor: ${addressDetails?.floor || '-'}</p>
+      <p>Landmark: ${addressDetails?.landmark || '-'}</p>
+      <p>Phone: ${addressDetails?.recipientPhoneNumber || '-'}</p>
 
-    try {
-      const file = await RNHTMLtoPDF.convert({
-        html,
-        fileName: `Invoice_${orderDetails._id}`,
-        base64: false,
-      });
+      <div class="center">Thank you for shopping with Grokart!</div>
+    </body>
+    </html>
+  `;
 
-      await Share.open({
-        url: Platform.OS === 'ios'
-          ? file.filePath!.replace('file://', '')
-          : `file://${file.filePath}`,
-        title: 'Share Invoice',
-        type: 'application/pdf',
-      });
-    } catch (error) {
-      Alert.alert('Error', 'Failed to generate or share PDF.');
-    }
-  };
+  try {
+    const file = await RNHTMLtoPDF.convert({
+      html,
+      fileName: `Invoice_${orderDetails._id}`,
+      base64: false,
+    });
+
+    await Share.open({
+      url: Platform.OS === 'ios'
+        ? file.filePath!.replace('file://', '')
+        : `file://${file.filePath}`,
+      title: 'Share Invoice',
+      type: 'application/pdf',
+    });
+  } catch (error) {
+    Alert.alert('Error', 'Failed to generate or share PDF.');
+  }
+};
+
 
   const handleSupport = () => {
     setSupportVisible(true);

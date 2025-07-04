@@ -1,11 +1,23 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import { View, Text, TouchableOpacity, FlatList, ActivityIndicator, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  FlatList,
+  ActivityIndicator,
+  StyleSheet,
+} from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useCart } from '../context/Cart';
+import { useOrder } from '../context/OrderContext';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Icon from "react-native-vector-icons/Ionicons";
-import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
+import Icon from 'react-native-vector-icons/Ionicons';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from 'react-native-reanimated';
 
 interface CheckoutParams {
   address: string;
@@ -39,7 +51,8 @@ const PaymentScreen = () => {
   const route = useRoute<RouteProp<Record<string, CheckoutParams>, string>>();
   const navigation = useNavigation();
   const { cart, clearCart } = useCart();
-  const { address, addressDetails } = route.params || { address: 'No address provided' };
+  const { addOrder } = useOrder();
+  const { address, addressDetails, location } = route.params || { address: 'No address provided' };
 
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState(null);
@@ -90,8 +103,8 @@ const PaymentScreen = () => {
   const deliveryCharge = 15;
   const handlingFee = 5;
   const codCharge = 0;
-  const gstCharges = 2
-  const totalPrice = totalItemPrice + deliveryCharge+ handlingFee + gstCharges;
+  const gstCharges = 2;
+  const totalPrice = totalItemPrice + deliveryCharge + handlingFee + gstCharges;
 
   const handleCODPayment = useCallback(async () => {
     if (!user || !token) {
@@ -120,19 +133,25 @@ const PaymentScreen = () => {
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
+      const paymentDetails = response.data.order;
       clearCart();
-      navigation.navigate('PaymentSuccess', { paymentDetails: response.data.order, address, addressDetails });
+      addOrder({
+        ...paymentDetails,
+        address,
+        addressDetails,
+        placedAt: new Date().toISOString(),
+      });
+      navigation.navigate('PaymentSuccess', { paymentDetails, address, addressDetails,location });
     } catch (error) {
       console.error('COD Payment Failed:', error);
       setError('Payment failed. Please try again.');
     } finally {
       setLoading(false);
     }
-  }, [user, token, cart, address, addressDetails, totalPrice, clearCart, navigation]);
+  }, [user, token, cart, address, addressDetails, totalPrice, clearCart, navigation, addOrder]);
 
   const renderSummaryItem = useCallback(
-    ({ item, index }) => <OrderSummaryItem item={item} index={index} />,
-    []
+    ({ item, index }) => <OrderSummaryItem item={item} index={index} />, []
   );
 
   if (!user && !error) {
@@ -145,7 +164,6 @@ const PaymentScreen = () => {
 
   return (
     <>
-    {/* Navbar */}
       <View style={styles.navbar}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Icon name="arrow-back" size={24} color="#000" />
@@ -153,79 +171,59 @@ const PaymentScreen = () => {
         <Text style={styles.navbarTitle}>Checkout & Confirm Order</Text>
         <View style={{ width: 24 }} />
       </View>
-    <View style={styles.container}>
-      <Text style={styles.heading}>Review & Confirm</Text>
+      <View style={styles.container}>
+        <Text style={styles.heading}>Review & Confirm</Text>
 
-      {error ? (
-        <Text style={styles.errorText} accessibilityLiveRegion="polite" accessibilityRole="alert">
-          {error}
-        </Text>
-      ) : null}
+        {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-      <View style={styles.addressContainer}>
-        <Text style={styles.label}>Deliver To</Text>
-        <Text style={styles.addressText}>{address}</Text>
-      </View>
-
-      <View style={styles.etaBox}>
-        <Text style={styles.etaText}>🚚 Delivery in 15–20 mins</Text>
-      </View>
-
-      <Text style={styles.label}>Order Summary</Text>
-      <FlatList
-        data={cart}
-        renderItem={renderSummaryItem}
-        keyExtractor={(item, index) => `${item._id}-${index}`}
-        showsVerticalScrollIndicator={false}
-        ListFooterComponent={
-          <View style={styles.summaryContainer}>
-            {/* Divider */}
-        <View style={styles.divider} />
-            <View style={styles.summaryRow}>
-              <Text>Items Total</Text>
-              <Text>₹{totalItemPrice.toFixed(0)}</Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text>Delivery Charge</Text>
-              <Text>₹{deliveryCharge.toFixed(0)}</Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text>Handling Fee</Text>
-              <Text>₹{handlingFee.toFixed(0)}</Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text>GST & Charges</Text>
-              <Text>₹{gstCharges.toFixed(0)}</Text>
-            </View>
-            <View style={styles.totalRow}>
-              <Text style={styles.totalText}>Total Payable</Text>
-              <Text style={styles.totalText}>₹{totalPrice.toFixed(0)}</Text>
-            </View>
-          </View>
-        }
-      />
-
-      <Animated.View style={animatedButtonStyle}>
-        <TouchableOpacity
-          onPress={handleCODPayment}
-          onPressIn={handlePressIn}
-          onPressOut={handlePressOut}
-          disabled={loading}
-          style={[styles.paymentButton, loading && { backgroundColor: '#a3d4ff' }]}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.paymentButtonText}>
-            {loading ? 'Processing...' : 'Confirm Order Using COD'}
-          </Text>
-        </TouchableOpacity>
-      </Animated.View>
-
-      {loading && (
-        <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color="#1E90FF" />
+        <View style={styles.addressContainer}>
+          <Text style={styles.label}>Deliver To</Text>
+          <Text style={styles.addressText}>{address}</Text>
         </View>
-      )}
-    </View>
+
+        <View style={styles.etaBox}>
+          <Text style={styles.etaText}>🚚 Delivery in 15–20 mins</Text>
+        </View>
+
+        <Text style={styles.label}>Order Summary</Text>
+        <FlatList
+          data={cart}
+          renderItem={renderSummaryItem}
+          keyExtractor={(item, index) => `${item._id}-${index}`}
+          showsVerticalScrollIndicator={false}
+          ListFooterComponent={
+            <View style={styles.summaryContainer}>
+              <View style={styles.divider} />
+              <View style={styles.summaryRow}><Text>Items Total</Text><Text>₹{totalItemPrice.toFixed(0)}</Text></View>
+              <View style={styles.summaryRow}><Text>Delivery Charge</Text><Text>₹{deliveryCharge.toFixed(0)}</Text></View>
+              <View style={styles.summaryRow}><Text>Handling Fee</Text><Text>₹{handlingFee.toFixed(0)}</Text></View>
+              <View style={styles.summaryRow}><Text>GST & Charges</Text><Text>₹{gstCharges.toFixed(0)}</Text></View>
+              <View style={styles.totalRow}><Text style={styles.totalText}>Total Payable</Text><Text style={styles.totalText}>₹{totalPrice.toFixed(0)}</Text></View>
+            </View>
+          }
+        />
+
+        <Animated.View style={animatedButtonStyle}>
+          <TouchableOpacity
+            onPress={handleCODPayment}
+            onPressIn={handlePressIn}
+            onPressOut={handlePressOut}
+            disabled={loading}
+            style={[styles.paymentButton, loading && { backgroundColor: '#a3d4ff' }]}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.paymentButtonText}>
+              {loading ? 'Processing...' : 'Confirm Order Using COD'}
+            </Text>
+          </TouchableOpacity>
+        </Animated.View>
+
+        {loading && (
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator size="large" color="#1E90FF" />
+          </View>
+        )}
+      </View>
     </>
   );
 };
@@ -234,17 +232,17 @@ const styles = StyleSheet.create({
   navbar: {
     paddingHorizontal: 16,
     paddingVertical: 14,
-    backgroundColor: "#fff",
+    backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    borderBottomColor: '#eee',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   navbarTitle: {
     fontSize: 18,
-    fontWeight: "bold",
-    color: "#000",
+    fontWeight: 'bold',
+    color: '#000',
   },
   container: { flex: 1, backgroundColor: '#ffffff', padding: 16 },
   heading: {

@@ -16,6 +16,9 @@ import Payment from '../components/Payment';
 import PaymentSuccess from '../components/PaymentSuccess';
 import OrderInvoice from '../components/OrderInvoice';
 import LocationFetcher from '../components/LocationFetcher';
+import MyOrders from '../components/MyOrders';
+import GiftCards from '../components/GiftCards';
+import AccountPrivacy from '../components/AccountPrivacy';
 
 const Stack = createStackNavigator();
 
@@ -40,6 +43,9 @@ const AppNavigator = () => {
       <Stack.Screen name="PaymentSuccess" component={PaymentSuccess} />
       <Stack.Screen name="OrderInvoice" component={OrderInvoice} />
       <Stack.Screen name="LocationFetcher" component={LocationFetcher} />
+      <Stack.Screen name="MyOrders" component={MyOrders} />
+      <Stack.Screen name="GiftCards" component={GiftCards} />
+      <Stack.Screen name="AccountPrivacy" component={AccountPrivacy} />
 
     </Stack.Navigator>
   );
