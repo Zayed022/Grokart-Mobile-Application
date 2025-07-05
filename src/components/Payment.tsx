@@ -19,44 +19,25 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 
-interface CheckoutParams {
-  address: string;
-  cartItems: any[];
-  email: string;
-  addressDetails: any;
-}
-
-interface OrderSummaryItemProps {
-  item: any;
-  index: number;
-}
-
-const OrderSummaryItem = React.memo(({ item, index }: OrderSummaryItemProps) => {
-  return (
-    <View style={styles.summaryRow}>
-      <Text
-        style={styles.summaryText}
-        numberOfLines={1}
-        ellipsizeMode="tail"
-        accessibilityLabel={`Item ${index + 1}: ${item.name}, quantity: ${item.quantity}`}
-      >
-        {item.name} × {item.quantity} | {item.description}
-      </Text>
-      <Text style={styles.summaryPrice}>₹{item.price * item.quantity}</Text>
-    </View>
-  );
-});
+const OrderSummaryItem = React.memo(({ item, index }) => (
+  <View style={styles.summaryRow}>
+    <Text style={styles.summaryText} numberOfLines={1} ellipsizeMode="tail">
+      {item.name} × {item.quantity} | {item.description}
+    </Text>
+    <Text style={styles.summaryPrice}>₹{item.price * item.quantity}</Text>
+  </View>
+));
 
 const PaymentScreen = () => {
-  const route = useRoute<RouteProp<Record<string, CheckoutParams>, string>>();
+  const route = useRoute();
   const navigation = useNavigation();
   const { cart, clearCart } = useCart();
   const { addOrder } = useOrder();
-  const { address, addressDetails, location } = route.params || { address: 'No address provided' };
+  const { address, addressDetails, location } = route.params || {};
 
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState<string | null>(null);
+  const [token, setToken] = useState(null);
   const [error, setError] = useState('');
 
   const buttonScale = useSharedValue(1);
@@ -84,15 +65,12 @@ const PaymentScreen = () => {
           setTimeout(() => navigation.navigate('Login'), 2000);
           return;
         }
-        if (storedToken) {
-          setToken(storedToken);
-        }
+        if (storedToken) setToken(storedToken);
       } catch (error) {
         console.error('Failed to load user/token:', error);
         setError('Failed to load user data. Please try again.');
       }
     };
-
     fetchUser();
   }, [navigation]);
 
@@ -102,7 +80,6 @@ const PaymentScreen = () => {
 
   const deliveryCharge = 15;
   const handlingFee = 5;
-  const codCharge = 0;
   const gstCharges = 2;
   const totalPrice = totalItemPrice + deliveryCharge + handlingFee + gstCharges;
 
@@ -141,18 +118,18 @@ const PaymentScreen = () => {
         addressDetails,
         placedAt: new Date().toISOString(),
       });
-      navigation.navigate('PaymentSuccess', { paymentDetails, address, addressDetails,location });
+      navigation.navigate('PaymentSuccess', { paymentDetails, address, addressDetails, location });
     } catch (error) {
       console.error('COD Payment Failed:', error);
       setError('Payment failed. Please try again.');
     } finally {
       setLoading(false);
     }
-  }, [user, token, cart, address, addressDetails, totalPrice, clearCart, navigation, addOrder]);
+  }, [user, token, cart, address, addressDetails, totalPrice, clearCart, navigation, addOrder, location]);
 
-  const renderSummaryItem = useCallback(
-    ({ item, index }) => <OrderSummaryItem item={item} index={index} />, []
-  );
+  const renderSummaryItem = useCallback(({ item, index }) => (
+    <OrderSummaryItem item={item} index={index} />
+  ), []);
 
   if (!user && !error) {
     return (
@@ -171,6 +148,7 @@ const PaymentScreen = () => {
         <Text style={styles.navbarTitle}>Checkout & Confirm Order</Text>
         <View style={{ width: 24 }} />
       </View>
+
       <View style={styles.container}>
         <Text style={styles.heading}>Review & Confirm</Text>
 
@@ -182,7 +160,7 @@ const PaymentScreen = () => {
         </View>
 
         <View style={styles.etaBox}>
-          <Text style={styles.etaText}>🚚 Delivery in 15–20 mins</Text>
+          <Text style={styles.etaText}>{'\uD83D\uDE9A'} Delivery in 15–20 mins</Text>
         </View>
 
         <Text style={styles.label}>Order Summary</Text>
@@ -271,8 +249,8 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: '#D1D5DB',
-    marginVertical: 14,
+    backgroundColor: '#eee',
+    marginVertical: 16,
   },
   etaBox: {
     backgroundColor: '#ECFDF5',
@@ -321,7 +299,7 @@ const styles = StyleSheet.create({
   paymentButton: {
     width: '100%',
     paddingVertical: 14,
-    backgroundColor: '#4F46E5',
+    backgroundColor: '#319c0e',
     borderRadius: 8,
     marginTop: 24,
     shadowColor: '#000',

@@ -11,7 +11,8 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { OrderContext } from '../context/OrderContext';
 import { useCart } from '../context/Cart';
-import Ionicons from "react-native-vector-icons/Ionicons"; // or `react-native-vector-icons`
+import Ionicons from "react-native-vector-icons/Ionicons";
+import Icon from "react-native-vector-icons/Ionicons"; // or `react-native-vector-icons`
 
 const MyOrders = () => {
   const { orders } = useContext(OrderContext);
@@ -87,7 +88,7 @@ const MyOrders = () => {
             style={styles.reorderBtn}
             onPress={() => handleReorder(item.items)}
           >
-            <Ionicons name="autorenew" size={16} color="#fff" />
+            
             <Text style={styles.btnText}>Reorder</Text>
           </TouchableOpacity>
 
@@ -119,6 +120,16 @@ const MyOrders = () => {
   }
 
   return (
+    <>
+
+    {/* Navbar */}
+                <View style={styles.navbar}>
+                  <TouchableOpacity onPress={() => navigation.goBack()}>
+                    <Icon name="arrow-back" size={24} color="#000" />
+                  </TouchableOpacity>
+                  <Text style={styles.navbarTitle}>Order History</Text>
+                  <View style={{ width: 24 }} />
+                </View>
     <ScrollView contentContainerStyle={styles.wrapper}>
       <Text style={styles.screenTitle}>📦 My Orders</Text>
       <FlatList
@@ -128,10 +139,26 @@ const MyOrders = () => {
         scrollEnabled={false}
       />
     </ScrollView>
+    </>
   );
 };
 
 const styles = StyleSheet.create({
+  navbar: {
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  navbarTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#000",
+  },
   wrapper: {
     padding: 16,
     paddingBottom: 40,

@@ -11,6 +11,8 @@ import { useCart } from "../context/Cart";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import Icon from "react-native-vector-icons/Ionicons";
 import { ScrollView } from "react-native";
+import { BlurView } from "@react-native-community/blur";
+
 
 interface OrderItemProps {
   item: any;
@@ -27,7 +29,7 @@ const OrderItem = React.memo(({ item }: OrderItemProps) => {
         ellipsizeMode="tail"
         accessibilityLabel={`Item name: ${item.name}, quantity: ${item.quantity}`}
       >
-        {item.name} × {item.quantity} | {item.description}
+         {item.name} × {item.quantity} | {item.description} 
         
       </Text>
       <Text style={styles.itemPrice}>₹{item.price * item.quantity}</Text>
@@ -72,7 +74,7 @@ const Checkout = () => {
     {/* Scrollable Content */}
     <ScrollView
       style={styles.container}
-      contentContainerStyle={{ paddingBottom: 100 }}
+      contentContainerStyle={{ paddingBottom: 130 }}
       showsVerticalScrollIndicator={false}
     >
       <Text style={styles.header}>🛒 Checkout Summary</Text>
@@ -101,7 +103,8 @@ const Checkout = () => {
           <Text style={styles.chargeValue}>₹{totalPrice}</Text>
         </View>
         <View style={styles.chargeRow}>
-          <Text style={styles.chargeLabel}>Delivery Charge</Text>
+          
+          <Text style={styles.chargeLabel}>Delivery Charge <Icon name="information-circle-outline" /></Text>
           <Text style={styles.chargeValue}>₹15</Text>
         </View>
         <Text style={styles.deliveryNote}>
@@ -131,7 +134,9 @@ const Checkout = () => {
         </Text>
       </View>
 
-      <TouchableOpacity
+      
+    </ScrollView>
+    <TouchableOpacity
         onPress={handlePlaceOrder}
         style={[
           styles.placeOrderButton,
@@ -146,7 +151,6 @@ const Checkout = () => {
           {loading ? "Processing..." : "Proceed to Payment"}
         </Text>
       </TouchableOpacity>
-    </ScrollView>
 
     {loading && (
       <View style={styles.loadingOverlay}>
@@ -311,17 +315,23 @@ const styles = StyleSheet.create({
     color: "#666",
   },
   placeOrderButton: {
-    backgroundColor: "#1E90FF",
-    padding: 15,
-    borderRadius: 12,
-    alignItems: "center",
-    marginTop: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 3,
-  },
+  backgroundColor: "#1E90FF",
+  paddingVertical: 16,
+  borderRadius: 12,
+  alignItems: "center",
+  marginHorizontal: 10,
+  shadowColor: "#000",
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.2,
+  shadowRadius: 3,
+  elevation: 10,
+  position: "absolute",
+  bottom: 10,
+  left: 0,
+  right: 0,
+  zIndex: 100,
+},
+
   disabledButton: {
     backgroundColor: "#a3d4ff",
   },

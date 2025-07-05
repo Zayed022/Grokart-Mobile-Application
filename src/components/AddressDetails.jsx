@@ -32,19 +32,18 @@ const AddressDetails = () => {
   const scrollRef = useRef();
 
   useEffect(() => {
-  (async () => {
-    try {
-      const saved = await AsyncStorage.getItem("userAddressDetails");
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        setAddressDetails((prev) => ({ ...prev, ...parsed }));
+    (async () => {
+      try {
+        const saved = await AsyncStorage.getItem("userAddressDetails");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          setAddressDetails((prev) => ({ ...prev, ...parsed }));
+        }
+      } catch (err) {
+        console.log("Failed to load saved address", err);
       }
-    } catch (err) {
-      console.log("Failed to load saved address", err);
-    }
-  })();
-}, []);
-
+    })();
+  }, []);
 
   const handleChange = (key, value) => {
     setAddressDetails((prev) => ({ ...prev, [key]: value }));
@@ -105,6 +104,34 @@ const AddressDetails = () => {
     }
   };
 
+  const renderInput = (key, placeholder, icon, options = {}) => {
+    const isPhone = key === "recipientPhoneNumber";
+    const invalidPhone =
+      isPhone && addressDetails[key] && !isValidPhone(addressDetails[key]);
+
+    return (
+      <View key={key} style={styles.inputWrapper}>
+        <Icon name={icon} size={18} color="#aaa" style={styles.inputIcon} />
+        <TextInput
+          placeholder={placeholder}
+          placeholderTextColor="#aaa"
+          style={[
+            styles.inputField,
+            invalidPhone && { borderColor: "#FF4D6D" },
+          ]}
+          value={addressDetails[key]}
+          onChangeText={(text) => handleChange(key, text)}
+          {...options}
+        />
+        {isPhone && (
+          <Text style={styles.helperText}>
+            {addressDetails[key]?.length || 0}/10 digits
+          </Text>
+        )}
+      </View>
+    );
+  };
+
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
@@ -129,7 +156,7 @@ const AddressDetails = () => {
           <View style={{ flex: 1 }}>
             <Text style={styles.addressText}>{address}</Text>
           </View>
-          <TouchableOpacity>
+          <TouchableOpacity style={styles.changeButton} onPress={() => navigation.goBack()}>
             <Text style={styles.changeText}>Change</Text>
           </TouchableOpacity>
         </View>
@@ -180,36 +207,15 @@ const AddressDetails = () => {
           </Text>
         </TouchableOpacity>
 
-        {[
-          { key: "houseNumber", placeholder: "House No. *(NA if not known)" },
-          { key: "floor", placeholder: "Floor *" },
-          { key: "buildingName", placeholder: "Building & Block No." },
-          { key: "landmark", placeholder: "Landmark & Area Name (Optional)" },
-          { key: "recipientName", placeholder: "Recipient Name *" },
-          {
-            key: "recipientPhoneNumber",
-            placeholder: "Recipient Phone Number *",
-            keyboardType: "phone-pad",
-            maxLength: 10,
-          },
-        ].map(({ key, placeholder, ...props }) => (
-          <TextInput
-            key={key}
-            placeholder={placeholder}
-            placeholderTextColor="#aaa"
-            style={[
-              styles.input,
-              key === "recipientPhoneNumber" &&
-                addressDetails[key] &&
-                !isValidPhone(addressDetails[key]) && {
-                  borderColor: "#FF4D6D",
-                },
-            ]}
-            value={addressDetails[key]}
-            onChangeText={(text) => handleChange(key, text)}
-            {...props}
-          />
-        ))}
+        {renderInput("houseNumber", "House No. *(NA if not known)", "home")}
+        {renderInput("floor", "Floor *", "layers")}
+        {renderInput("buildingName", "Building & Block No.", "business")}
+        {renderInput("landmark", "Landmark & Area Name (Optional)", "navigate")}
+        {renderInput("recipientName", "Recipient Name *", "person")}
+        {renderInput("recipientPhoneNumber", "Recipient Phone Number *", "call", {
+          keyboardType: "phone-pad",
+          maxLength: 10,
+        })}
 
         <TouchableOpacity
           style={[styles.saveButton, !isComplete() && styles.disabledButton]}
@@ -222,6 +228,8 @@ const AddressDetails = () => {
     </KeyboardAvoidingView>
   );
 };
+
+export default AddressDetails;
 
 const styles = StyleSheet.create({
   navbar: {
@@ -282,9 +290,16 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 14,
   },
+  changeButton: {
+    backgroundColor: "#FFD700",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
   changeText: {
-    color: "#FFD700",
+    color: "#000",
     fontWeight: "600",
+    fontSize: 13,
   },
   addressTypeWrapper: {
     flexDirection: "row",
@@ -313,15 +328,31 @@ const styles = StyleSheet.create({
   typeButtonTextSelected: {
     color: "#fff",
   },
-  input: {
+  inputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
     borderWidth: 1,
     borderColor: "#ddd",
     borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingHorizontal: 10,
     marginBottom: 14,
+    backgroundColor: "#fff",
+  },
+  inputIcon: {
+    marginRight: 8,
+  },
+  inputField: {
+    flex: 1,
     fontSize: 14,
     color: "#333",
+    paddingVertical: 12,
+  },
+  helperText: {
+    position: "absolute",
+    right: 10,
+    bottom: -16,
+    fontSize: 11,
+    color: "#888",
   },
   saveButton: {
     backgroundColor: "#FF4D6D",
@@ -339,5 +370,3 @@ const styles = StyleSheet.create({
     backgroundColor: "#ccc",
   },
 });
-
-export default AddressDetails;

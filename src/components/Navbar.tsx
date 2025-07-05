@@ -86,6 +86,7 @@ const Navbar: React.FC = () => {
             <Text style={styles.dropdownItem}>Account Privacy</Text>
           </Pressable>
 
+          
           <Pressable onPress={() => { closeDropdown(); navigation.navigate("Login"); }}>
             <Text style={styles.logoutItem}>Log Out</Text>
           </Pressable>

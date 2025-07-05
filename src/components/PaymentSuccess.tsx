@@ -1,5 +1,12 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  Linking,
+} from 'react-native';
 import { RouteProp, useNavigation } from '@react-navigation/native';
 import { RootStackParamList } from '../types';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -13,7 +20,15 @@ interface Props {
 
 const PaymentSuccess: React.FC<Props> = ({ route }) => {
   const navigation = useNavigation<NavigationProp>();
-  const { paymentDetails, address, addressDetails,location } = route.params;
+  const { paymentDetails, address, addressDetails, location } = route.params;
+
+  const handleCallSupport = () => {
+    Linking.openURL(`tel:7498881947`);
+  };
+
+  const handleEmailSupport = () => {
+    Linking.openURL(`mailto:zayedans022@gmail.com`);
+  };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -23,63 +38,77 @@ const PaymentSuccess: React.FC<Props> = ({ route }) => {
       <Text style={styles.subText}>Your order is on its way 🚚</Text>
 
       <View style={styles.card}>
-        <View style={styles.row}>
-          <Text style={styles.label}>Order ID</Text>
-          <Text style={styles.value}>{paymentDetails._id || 'N/A'}</Text>
-        </View>
-
-        <View style={styles.row}>
-          <Text style={styles.label}>Payment</Text>
-          <Text style={styles.value}>{paymentDetails.paymentMethod?.toUpperCase()}</Text>
-        </View>
-
-        <View style={styles.row}>
-          <Text style={styles.label}>Amount</Text>
-          <Text style={styles.value}>₹{paymentDetails.totalAmount }</Text>
-        </View>
-
-        <View style={styles.row}>
-          <Text style={styles.label}>ETA</Text>
-          <Text style={styles.value}>15–20 mins</Text>
-        </View>
+        <InfoRow label="Order ID" value={paymentDetails._id || 'N/A'} />
+        <InfoRow label="Payment Method" value={paymentDetails.paymentMethod?.toUpperCase()} />
+        <InfoRow label="Total Amount" value={`₹${paymentDetails.totalAmount}`} highlight />
+        <InfoRow label="ETA" value="15–20 mins" badge />
 
         <View style={styles.divider} />
 
-        <Text style={styles.noteText}>
-          Note: Please pay <Text style={styles.noteAmount}>₹{paymentDetails.totalAmount }</Text> to the delivery partner upon arrival of your order.
+        <Text style={styles.note}>
+          <Text style={styles.noteLabel}>Note: </Text>
+          Please pay{' '}
+          <Text style={styles.highlightedAmount}>₹{paymentDetails.totalAmount}</Text>{' '}
+          to the delivery partner upon arrival.
         </Text>
 
         <View style={styles.section}>
-          <Text style={styles.label}>Delivery Address</Text>
-          <Text style={styles.addressText}>{address}</Text>
+          <Text style={styles.sectionTitle}>Delivery Address</Text>
+          <Text style={styles.sectionText}>{address}</Text>
         </View>
 
-        {addressDetails?.landmark || addressDetails?.floor || addressDetails?.buildingName ? (
+        {(addressDetails?.buildingName ||
+          addressDetails?.floor ||
+          addressDetails?.landmark ||
+          addressDetails?.recipientPhoneNumber) && (
           <View style={styles.section}>
-            <Text style={styles.label}>More Details</Text>
-            {addressDetails?.buildingName && <Text style={styles.addressLine}>Building: {addressDetails.buildingName}</Text>}
-            {addressDetails?.floor && <Text style={styles.addressLine}>Floor: {addressDetails.floor}</Text>}
-            {addressDetails?.landmark && <Text style={styles.addressLine}>Landmark: {addressDetails.landmark}</Text>}
-             {addressDetails?.recipientPhoneNumber && <Text style={styles.addressLine}>Phone : {addressDetails.recipientPhoneNumber}</Text>}
+            <Text style={styles.sectionTitle}>More Details</Text>
+            {addressDetails.buildingName && (
+              <Text style={styles.detailLine}>🏢 Building: {addressDetails.buildingName}</Text>
+            )}
+            {addressDetails.floor && (
+              <Text style={styles.detailLine}>🏬 Floor: {addressDetails.floor}</Text>
+            )}
+            {addressDetails.landmark && (
+              <Text style={styles.detailLine}>📍 Landmark: {addressDetails.landmark}</Text>
+            )}
+            {addressDetails.recipientPhoneNumber && (
+              <Text style={styles.detailLine}>📞 Phone: {addressDetails.recipientPhoneNumber}</Text>
+            )}
           </View>
-        ) : null}
+        )}
       </View>
+
+      {/* 🎟 Invoice */}
       <TouchableOpacity
-  style={[styles.button, { backgroundColor: '#111827', marginBottom: 14 }]}
-  onPress={() =>
-    navigation.navigate('OrderInvoice', {
-      orderDetails: paymentDetails,
-      address,
-      addressDetails,
-      location
-    })
-  }
->
-  <Text style={styles.buttonText}>🧾 View Invoice</Text>
-</TouchableOpacity>
+        style={[styles.button, styles.invoiceBtn]}
+        onPress={() =>
+          navigation.navigate('OrderInvoice', {
+            orderDetails: paymentDetails,
+            address,
+            addressDetails,
+            location,
+          })
+        }
+      >
+        <Text style={styles.buttonText}>🧾 View Invoice</Text>
+      </TouchableOpacity>
 
+      {/* 📞 Call Support */}
+      <TouchableOpacity style={[styles.button, styles.callBtn]} onPress={handleCallSupport}>
+        <Text style={styles.buttonText}>📞 Call Support</Text>
+      </TouchableOpacity>
 
-      <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Home')}>
+      {/* 📧 Email Support */}
+      <TouchableOpacity style={[styles.button, styles.emailBtn]} onPress={handleEmailSupport}>
+        <Text style={styles.buttonText}>📧 Email Us</Text>
+      </TouchableOpacity>
+
+      {/* 🛍 Continue Shopping */}
+      <TouchableOpacity
+        style={[styles.button, styles.continueBtn]}
+        onPress={() => navigation.navigate('Home')}
+      >
         <Text style={styles.buttonText}>🛒 Continue Shopping</Text>
       </TouchableOpacity>
     </ScrollView>
@@ -88,35 +117,56 @@ const PaymentSuccess: React.FC<Props> = ({ route }) => {
 
 export default PaymentSuccess;
 
+const InfoRow = ({
+  label,
+  value,
+  highlight,
+  badge,
+}: {
+  label: string;
+  value: string;
+  highlight?: boolean;
+  badge?: boolean;
+}) => (
+  <View style={styles.row}>
+    <Text style={styles.label}>{label}</Text>
+    {badge ? (
+      <View style={styles.etaBadge}>
+        <Text style={styles.etaText}>{value}</Text>
+      </View>
+    ) : (
+      <Text style={[styles.value, highlight && styles.highlightValue]}>{value}</Text>
+    )}
+  </View>
+);
+
 const styles = StyleSheet.create({
   container: {
+    flexGrow: 1,
     padding: 24,
     backgroundColor: '#f9fafc',
-    flexGrow: 1,
-    justifyContent: 'center',
   },
   emoji: {
-    fontSize: 48,
+    fontSize: 52,
     textAlign: 'center',
     marginBottom: 10,
   },
   title: {
     fontSize: 26,
     fontWeight: 'bold',
-    color: '#16a34a',
+    color: '#10b981',
     textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,
     textAlign: 'center',
     color: '#4b5563',
-    marginBottom: 6,
   },
   subText: {
     fontSize: 15,
     textAlign: 'center',
     color: '#6b7280',
-    marginBottom: 24,
+    marginBottom: 20,
   },
   card: {
     backgroundColor: '#ffffff',
@@ -124,7 +174,7 @@ const styles = StyleSheet.create({
     padding: 20,
     marginBottom: 30,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 6,
     elevation: 4,
@@ -132,10 +182,8 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 10,
-  },
-  section: {
-    marginTop: 16,
+    marginBottom: 12,
+    alignItems: 'center',
   },
   label: {
     fontSize: 15,
@@ -145,48 +193,84 @@ const styles = StyleSheet.create({
   value: {
     fontSize: 15,
     color: '#111827',
-    fontWeight: '500',
   },
-  noteText: {
-    marginTop: 14,
-    fontSize: 15,
-    color: '#1f2937',
-    fontWeight: '500',
+  highlightValue: {
+    fontWeight: 'bold',
+    fontSize: 16,
+    color: '#1D4ED8',
   },
-  noteAmount: {
-    color: '#1d4ed8',
-    fontWeight: '700',
+  etaBadge: {
+    backgroundColor: '#D1FAE5',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+  },
+  etaText: {
+    color: '#065F46',
+    fontSize: 14,
+    fontWeight: '600',
   },
   divider: {
     height: 1,
     backgroundColor: '#e5e7eb',
-    marginVertical: 12,
+    marginVertical: 14,
   },
-  addressText: {
+  note: {
+    fontSize: 15,
+    color: '#1f2937',
+    fontWeight: '500',
+  },
+  noteLabel: {
+    fontWeight: '700',
+    color: '#4B5563',
+  },
+  highlightedAmount: {
+    fontWeight: '700',
+    color: '#1D4ED8',
+  },
+  section: {
+    marginTop: 18,
+  },
+  sectionTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#111827',
+    marginBottom: 6,
+  },
+  sectionText: {
     fontSize: 15,
     color: '#374151',
-    marginTop: 6,
     lineHeight: 22,
   },
-  addressLine: {
+  detailLine: {
     fontSize: 14,
     color: '#4b5563',
     marginTop: 4,
   },
   button: {
-    backgroundColor: '#4F46E5',
     paddingVertical: 14,
-    borderRadius: 30,
+    borderRadius: 14,
     alignItems: 'center',
-    shadowColor: '#6366f1',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 5,
+    marginBottom: 12,
+    elevation: 4,
   },
   buttonText: {
     color: '#fff',
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '600',
+  },
+
+  invoiceBtn: {
+    backgroundColor: '#41d99f', // Slate
+  },
+  callBtn: {
+    backgroundColor: '#788ef0', // Green (like WhatsApp)
+  },
+  emailBtn: {
+    backgroundColor: '#de526e', // Red (Gmail)
+  },
+  continueBtn: {
+    backgroundColor: '#7d58ed', // Violet (Zepto-style)
+    marginBottom: 30,
   },
 });

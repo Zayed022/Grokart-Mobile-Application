@@ -619,7 +619,7 @@ const styles = StyleSheet.create({
   elevation: 5,
 },
 savedButton:{
-  backgroundColor: "#4CAF50",
+  backgroundColor: "#319c0e",
   padding: 12,
   borderRadius: 12,
   alignItems: "center",
@@ -724,7 +724,7 @@ savedAddressContainer: {
     backgroundColor: "#e6ffed",
     borderWidth: 1,
     borderColor: "#a0d6b4",
-    padding: 15,
+    padding: 8,
     borderRadius: 12,
     marginBottom: 15,
   },
