@@ -34,7 +34,7 @@ const LocationSelector: React.FC = () => {
       </View>
 
       <View style={styles.locationInfo}>
-        <Text style={styles.label}>Delivery to Home</Text>
+        <Text style={styles.label}>Delivery to</Text>
         <Text style={styles.address} numberOfLines={1}>
           {address || 'Select delivery location'}
         </Text>

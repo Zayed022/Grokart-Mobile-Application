@@ -1,4 +1,3 @@
-// LocationFetcher.tsx - React Native version
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -9,6 +8,7 @@ import {
   Alert,
   Platform,
   ScrollView,
+  TextInput,
 } from 'react-native';
 import Geolocation from '@react-native-community/geolocation';
 import MapView, { Marker, LatLng } from 'react-native-maps';
@@ -18,6 +18,7 @@ import { useNavigation } from '@react-navigation/native';
 
 const LocationFetcher: React.FC = () => {
   const [userLocation, setUserLocation] = useState<LatLng | null>(null);
+  const [manualAddress, setManualAddress] = useState('');
   const [showMap, setShowMap] = useState(false);
   const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
   const { setConfirmedLocation } = useLocation();
@@ -65,50 +66,83 @@ const LocationFetcher: React.FC = () => {
   };
 
   const handleConfirmLocation = async () => {
-  if (!userLocation) return;
+    if (!userLocation) return;
 
-  try {
-    // Reverse geocoding using OpenStreetMap API
-    const response = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${userLocation.latitude}&lon=${userLocation.longitude}`
-    );
-    const data = await response.json();
-    const address = data?.display_name || `Lat: ${userLocation.latitude}, Lng: ${userLocation.longitude}`;
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${userLocation.latitude}&lon=${userLocation.longitude}`
+      );
+      const data = await response.json();
+      const address = data?.display_name || `Lat: ${userLocation.latitude}, Lng: ${userLocation.longitude}`;
 
-    const isBhiwandi = address.toLowerCase().includes('bhiwandi');
-    if (!isBhiwandi) {
-      Alert.alert('Service not available in this area.');
+      const isBhiwandi = address.toLowerCase().includes('bhiwandi');
+      if (!isBhiwandi) {
+        Alert.alert('Service not available in this area.');
+        setShowMap(false);
+        return;
+      }
+
+      const newAddr = { ...userLocation, address };
+
+      await setConfirmedLocation(newAddr);
+      Alert.alert('Location Confirmed', address);
       setShowMap(false);
-      return;
+
+      const existing = JSON.parse((await AsyncStorage.getItem('savedAddresses')) || '[]');
+      const updated = [newAddr, ...existing.filter((a: any) => a.address !== address)];
+      await AsyncStorage.setItem('savedAddresses', JSON.stringify(updated));
+      setSavedAddresses(updated);
+
+      navigation.navigate('Home');
+    } catch (error) {
+      console.error('Confirm error:', error);
+      Alert.alert('Failed to confirm location');
+    }
+  };
+
+  const handleManualAddressSubmit = async () => {
+    if (!manualAddress.trim()) return Alert.alert('Please enter a valid address.');
+
+    const isBhiwandi = manualAddress.toLowerCase().includes('bhiwandi');
+    if (!isBhiwandi) {
+      return Alert.alert('Service not available in this area.');
     }
 
-    const newAddr = { ...userLocation, address };
+    const newAddr = { latitude: 0, longitude: 0, address: manualAddress };
 
     await setConfirmedLocation(newAddr);
-    Alert.alert('Location Confirmed', address);
-    setShowMap(false);
+    Alert.alert('Location Confirmed', manualAddress);
 
     const existing = JSON.parse((await AsyncStorage.getItem('savedAddresses')) || '[]');
-    const updated = [newAddr, ...existing.filter((a: any) => a.address !== address)];
+    const updated = [newAddr, ...existing.filter((a: any) => a.address !== manualAddress)];
     await AsyncStorage.setItem('savedAddresses', JSON.stringify(updated));
     setSavedAddresses(updated);
 
     navigation.navigate('Home');
-  } catch (error) {
-    console.error('Confirm error:', error);
-    Alert.alert('Failed to confirm location');
-  }
-};
-
+  };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.heading}>📍 Confirm Delivery Location</Text>
-      <Text style={styles.description}>Tap below to detect your current location.</Text>
+      <Text style={styles.description}>Tap below to detect your current location or enter manually.</Text>
 
       <TouchableOpacity style={styles.detectButton} onPress={getUserLocation}>
         <Text style={styles.detectButtonText}>Detect My Location</Text>
       </TouchableOpacity>
+
+      {/* Manual Address Input */}
+      <View style={styles.manualInputBox}>
+        <TextInput
+          placeholder="Enter your delivery address manually"
+          value={manualAddress}
+          onChangeText={setManualAddress}
+          style={styles.input}
+          multiline
+        />
+        <TouchableOpacity style={styles.manualButton} onPress={handleManualAddressSubmit}>
+          <Text style={styles.manualButtonText}>Use this Address</Text>
+        </TouchableOpacity>
+      </View>
 
       {savedAddresses.length > 0 && (
         <View style={styles.savedBox}>
@@ -154,9 +188,26 @@ const styles = StyleSheet.create({
   container: { padding: 20, backgroundColor: '#fff', flexGrow: 1 },
   heading: { fontSize: 22, fontWeight: '700', marginBottom: 8 },
   description: { fontSize: 16, color: '#666', marginBottom: 20 },
-  detectButton: { backgroundColor: '#4CAF50', padding: 14, borderRadius: 10 },
+  detectButton: { backgroundColor: '#4CAF50', padding: 14, borderRadius: 10, marginBottom: 20 },
   detectButtonText: { color: '#fff', fontWeight: '600', textAlign: 'center' },
-  savedBox: { marginTop: 30 },
+  manualInputBox: { marginBottom: 24 },
+  input: {
+    borderColor: '#ddd',
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 12,
+    minHeight: 60,
+    textAlignVertical: 'top',
+    fontSize: 15,
+  },
+  manualButton: {
+    marginTop: 10,
+    backgroundColor: '#2563eb',
+    padding: 14,
+    borderRadius: 10,
+  },
+  manualButtonText: { color: '#fff', textAlign: 'center', fontWeight: '600' },
+  savedBox: { marginTop: 20 },
   savedHeading: { fontSize: 18, fontWeight: '600', marginBottom: 10 },
   savedCard: { padding: 14, backgroundColor: '#eee', borderRadius: 10, marginBottom: 8 },
   savedText: { fontSize: 14 },

@@ -96,11 +96,23 @@ const CsCards: React.FC = () => {
             style={styles.card}
           >
             <Image
-              source={{ uri: subcategory.image || 'https://via.placeholder.com/200' }}
-              style={styles.image}
-              resizeMode="cover"
-              defaultSource={{ uri: 'https://via.placeholder.com/200' }} // Placeholder for faster perceived loading
-            />
+  source={
+    subcategory.image
+      ? {
+          uri: subcategory.image.includes('http://')
+            ? subcategory.image.replace('http://', 'https://').replace(/\.avif$/, '.jpg')
+            : subcategory.image.replace(/\.avif$/, '.jpg'),
+        }
+      : require('../assets/images/Grokart.png')
+  }
+  style={styles.image}
+  resizeMode="cover"
+  accessibilityLabel={`Image of ${subcategory.name}`}
+  onError={(e) => {
+    console.warn(`Image load failed for ${subcategory.name}:`, e.nativeEvent.error);
+  }}
+/>
+
             <Text style={styles.subcategoryText}>{subcategory.subcategory}</Text>
           </TouchableOpacity>
         ))}

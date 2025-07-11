@@ -12,11 +12,7 @@ const PaanCorner: React.FC = () => {
 
   return (
     <TouchableOpacity style={[styles.container, { width: width - 32 }]} activeOpacity={0.9} onPress={handlePress}>
-      <Image
-        source={require('../assets/images/paan.png')}
-        style={styles.image}
-        resizeMode="stretch" // or 'cover'
-      />
+      
     </TouchableOpacity>
   );
 };
