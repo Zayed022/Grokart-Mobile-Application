@@ -21,9 +21,7 @@ const OrderReviewNotice = () => {
           for delivery.
         </Text>
 
-        <TouchableOpacity onPress={handleNavigate}>
-          <Text style={styles.linkText}>Read Cancellation Policy</Text>
-        </TouchableOpacity>
+        
       </View>
     </View>
   );
