@@ -19,6 +19,7 @@ import LocationFetcher from '../components/LocationFetcher';
 import MyOrders from '../components/MyOrders';
 import GiftCards from '../components/GiftCards';
 import AccountPrivacy from '../components/AccountPrivacy';
+import CustomerCare from '../components/CustomerCare';
 
 const Stack = createStackNavigator();
 
@@ -46,6 +47,7 @@ const AppNavigator = () => {
       <Stack.Screen name="MyOrders" component={MyOrders} />
       <Stack.Screen name="GiftCards" component={GiftCards} />
       <Stack.Screen name="AccountPrivacy" component={AccountPrivacy} />
+       <Stack.Screen name="CustomerCare" component={CustomerCare} />
 
     </Stack.Navigator>
   );

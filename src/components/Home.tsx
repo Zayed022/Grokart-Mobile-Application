@@ -5,36 +5,103 @@ import {
   StyleSheet,
   RefreshControl,
   TouchableOpacity,
-  Image,
-  Pressable,
+  Text,
+  InteractionManager,
 } from 'react-native';
 import Navbar from './Navbar';
-import CsCards from './Subcategory';
+import Subcategory from './Subcategory';
 import { useNavigation } from '@react-navigation/native';
-import { Text } from 'react-native-gesture-handler';
-import Feather from 'react-native-vector-icons/Feather';
 import { useCart } from '../context/Cart';
 import PaanCorner from './PaanCornerBanner';
 import LocationSelector from './LocationSelector';
+import HomeBanners from './HomeBanners';
+import ProductList from './ProductList'; // Already optimized version using FlashList
+import FastImage from 'react-native-fast-image';
+import ShimmerPlaceholder from './ShimmerPlaceholder';
+import CODBanner from './CODBanner';
 
+const MemoizedSubcategory = React.memo(Subcategory);
 
-const MemoizedCsCards = React.memo(CsCards);
+const CartBar = React.memo(({ cart, cartCount, onPress }: any) => {
+  const savings = cart.reduce(
+    (sum: number, item: any) => sum + (item.discount || 0) * item.quantity,
+    0
+  );
+
+  return (
+    <TouchableOpacity
+      style={styles.cartBarContainer}
+      activeOpacity={0.85}
+      onPress={onPress}
+    >
+      <View style={styles.bannerRow}>
+        <Text style={styles.bannerEmoji}>🎉</Text>
+        <Text style={styles.bannerText}>
+          <Text style={styles.bold}>Items Added to Cart!</Text>
+        </Text>
+      </View>
+
+      <View style={styles.divider} />
+
+      <View style={styles.cartContent}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.imageRow}
+        >
+          {cart.slice(0, 5).map((item: any, index: number) => (
+            <FastImage
+              key={index}
+              source={{
+                uri: item.image || 'https://via.placeholder.com/40',
+                priority: FastImage.priority.normal,
+              }}
+              style={styles.cartImage}
+              resizeMode={FastImage.resizeMode.contain}
+            />
+          ))}
+        </ScrollView>
+
+        <View style={styles.itemInfo}>
+          <Text style={styles.itemCount}>
+            {cartCount} Item{cartCount > 1 ? 's' : ''}
+          </Text>
+          <Text style={styles.savings}>You save ₹{savings}</Text>
+        </View>
+
+        <View style={styles.cartButton}>
+          <Text style={styles.buttonText}>Go to cart</Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+});
 
 const Home = () => {
   const navigation = useNavigation();
-  const [refreshing, setRefreshing] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
   const { cart } = useCart();
   const cartCount = cart.reduce((total, item) => total + item.quantity, 0);
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [showContent, setShowContent] = useState(false);
 
-  
+  useEffect(() => {
+    const task = InteractionManager.runAfterInteractions(() => {
+      setShowContent(true);
+    });
+
+    return () => task.cancel();
+  }, []);
 
   const onRefresh = useCallback(() => {
-
     setRefreshing(true);
     setRefreshKey((prev) => prev + 1);
-    setTimeout(() => setRefreshing(false), 2000);
+    setTimeout(() => setRefreshing(false), 1000);
   }, []);
+
+  const handleCartPress = useCallback(() => {
+    navigation.navigate('Cart' as never);
+  }, [navigation]);
 
   return (
     <View style={styles.container}>
@@ -45,67 +112,27 @@ const Home = () => {
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
+        showsVerticalScrollIndicator={false}
       >
-        <LocationSelector/>
-         <PaanCorner />
-        <MemoizedCsCards refreshKey={refreshKey} />
+        <LocationSelector />
+        <HomeBanners />
+        <CODBanner/>
+        <MemoizedSubcategory refreshKey={refreshKey} />
+        {showContent ? <ProductList /> : <ShimmerPlaceholder />}
       </ScrollView>
 
-       {cartCount > 0 && (
-        
-  <TouchableOpacity
-    style={styles.cartBarContainer}
-    activeOpacity={0.85}
-    onPress={() => navigation.navigate('Cart')}
-  >
-    {/* Banner */}
-    <View style={styles.bannerRow}>
-      <Text style={styles.bannerEmoji}>🎉</Text>
-      <Text style={styles.bannerText}>
-        Hooray! {/*<Text style={styles.bold}>FREE DELIVERY</Text> unlocked!*/}
-        <Text style={styles.bold}>Items Added to Cart!</Text> 
-      </Text>
-    </View>
-
-    {/* Divider */}
-    <View style={styles.divider} />
-
-    {/* Cart Row */}
-    <View style={styles.cartContent}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imageRow}>
-        {cart.slice(0, 5).map((item, index) => (
-          <Image
-            key={index}
-            source={{ uri: item.image || 'https://via.placeholder.com/40' }}
-            style={styles.cartImage}
-          />
-        ))}
-      </ScrollView>
-
-      <View style={styles.itemInfo}>
-        <Text style={styles.itemCount}>
-          {cartCount} Item{cartCount > 1 ? 's' : ''}
-        </Text>
-        <Text style={styles.savings}>
-          You save ₹{cart.reduce((sum, item) => sum + (item.discount || 0) * item.quantity, 0)}
-        </Text>
-      </View>
-
-      {/* CTA Button styled as box, but no touch handler since outer one handles it */}
-      <View style={styles.cartButton}>
-        <Text style={styles.buttonText}>Go to cart</Text>
-      </View>
-    </View>
-  </TouchableOpacity>
-  
-)}
-
-
-
-      
+      {cartCount > 0 && (
+        <CartBar cart={cart} cartCount={cartCount} onPress={handleCartPress} />
+      )}
     </View>
   );
 };
+
+
+
+
+
+
 
 const styles = StyleSheet.create({
   container: {

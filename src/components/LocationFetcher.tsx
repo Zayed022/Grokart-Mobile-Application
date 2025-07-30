@@ -130,6 +130,11 @@ const LocationFetcher: React.FC = () => {
         <Text style={styles.detectButtonText}>Detect My Location</Text>
       </TouchableOpacity>
 
+      <View style={styles.orContainer}>
+  <Text style={styles.orText}>OR</Text>
+</View>
+
+
       {/* Manual Address Input */}
       <View style={styles.manualInputBox}>
         <TextInput
@@ -185,36 +190,148 @@ const LocationFetcher: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { padding: 20, backgroundColor: '#fff', flexGrow: 1 },
-  heading: { fontSize: 22, fontWeight: '700', marginBottom: 8 },
-  description: { fontSize: 16, color: '#666', marginBottom: 20 },
-  detectButton: { backgroundColor: '#4CAF50', padding: 14, borderRadius: 10, marginBottom: 20 },
-  detectButtonText: { color: '#fff', fontWeight: '600', textAlign: 'center' },
-  manualInputBox: { marginBottom: 24 },
+  container: {
+    padding: 20,
+    backgroundColor: '#f9fafb',
+    flexGrow: 1,
+  },
+  heading: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#111827',
+    marginBottom: 6,
+  },
+  orContainer: {
+  alignItems: 'center',
+  marginVertical: 16,
+},
+orText: {
+  fontSize: 16,
+  fontWeight: '600',
+  color: '#6b7280', // Tailwind's gray-500 for modern subtlety
+},
+
+  description: {
+    fontSize: 15,
+    color: '#6b7280',
+    marginBottom: 20,
+  },
+
+  detectButton: {
+    backgroundColor: '#22c55e',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    shadowColor: '#22c55e',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  detectButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+
+  manualInputBox: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 24,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 10,
+    elevation: 2,
+  },
   input: {
-    borderColor: '#ddd',
+    borderColor: '#d1d5db',
     borderWidth: 1,
     borderRadius: 10,
     padding: 12,
     minHeight: 60,
     textAlignVertical: 'top',
     fontSize: 15,
+    color: '#111827',
   },
   manualButton: {
-    marginTop: 10,
-    backgroundColor: '#2563eb',
-    padding: 14,
+    marginTop: 14,
+    backgroundColor: '#3b82f6',
+    paddingVertical: 14,
     borderRadius: 10,
+    alignItems: 'center',
+    shadowColor: '#3b82f6',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 5,
+    elevation: 4,
   },
-  manualButtonText: { color: '#fff', textAlign: 'center', fontWeight: '600' },
-  savedBox: { marginTop: 20 },
-  savedHeading: { fontSize: 18, fontWeight: '600', marginBottom: 10 },
-  savedCard: { padding: 14, backgroundColor: '#eee', borderRadius: 10, marginBottom: 8 },
-  savedText: { fontSize: 14 },
-  mapContainer: { marginTop: 30, height: 300, borderRadius: 12, overflow: 'hidden' },
-  map: { flex: 1 },
-  confirmButton: { backgroundColor: '#10B981', padding: 14, borderRadius: 10, marginTop: 10 },
-  confirmText: { color: '#fff', textAlign: 'center', fontWeight: '600' },
+  manualButtonText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+
+  savedBox: {
+    marginTop: 32,
+  },
+  savedHeading: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#111827',
+    marginBottom: 12,
+  },
+  savedCard: {
+    backgroundColor: '#ffffff',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    shadowColor: '#000',
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  savedText: {
+    fontSize: 14,
+    color: '#374151',
+  },
+
+  mapContainer: {
+    marginTop: 30,
+    height: 300,
+    borderRadius: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  map: {
+    flex: 1,
+  },
+  confirmButton: {
+    backgroundColor: '#16a34a',
+    paddingVertical: 14,
+    borderRadius: 12,
+    marginTop: 14,
+    alignItems: 'center',
+    shadowColor: '#16a34a',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  confirmText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '600',
+  },
 });
+
 
 export default LocationFetcher;

@@ -32,6 +32,7 @@ import {
 } from "react-native-permissions";
 import axios from "axios";
 import { Swipeable } from 'react-native-gesture-handler';
+import OrderReviewNotice from "./OrderReviewNotice";
 
 interface Location {
   latitude: number;
@@ -306,6 +307,8 @@ const CartDisplay = () => {
         />
       ))}
 
+      <OrderReviewNotice/>
+
       {/* Total Price */}
       <View style={styles.totalContainer}>
         <Text style={styles.totalText}>Total:</Text>
@@ -466,7 +469,7 @@ const styles = StyleSheet.create({
   },
   screenBackground: {
     flex: 1,
-    backgroundColor: "#f8f9fa", // Light subtle gray background for depth
+    backgroundColor: "#909496", // Light subtle gray background for depth
   },
 
   cartItem: {

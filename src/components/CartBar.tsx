@@ -16,8 +16,8 @@ const FloatingCartBar = () => {
 
   const cartCount = cart.reduce((total, item) => total + item.quantity, 0);
   const totalSavings = cart.reduce(
-    (sum, item) => sum + (item.discount || 0) * item.quantity,
-    0
+    (sum, item) => sum + (item.discount || 5) * item.quantity,
+    5
   );
 
   if (cartCount === 0) return null;
@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
     color: '#10B981',
   },
   cartButton: {
-    backgroundColor: '#10B981',
+    backgroundColor: '#45751aff',
     paddingVertical: 8,
     paddingHorizontal: 18,
     borderRadius: 8,

@@ -12,6 +12,7 @@ import { useNavigation } from "@react-navigation/native";
 import MaterialIcon from "react-native-vector-icons/MaterialIcons";
 import { useCart } from "../context/Cart";
 import Grokart from "../assets/images/Grokart.png";
+import SearchBar from "./SearchBar";
 
 const Navbar: React.FC = () => {
   const navigation = useNavigation();
@@ -30,14 +31,7 @@ const Navbar: React.FC = () => {
         <Image source={Grokart} style={styles.logo} resizeMode="contain" />
 
         {/* Search Input Redirect */}
-        <TouchableOpacity
-          style={styles.searchContainer}
-          onPress={() => navigation.navigate("Search")}
-          activeOpacity={0.7}
-        >
-          <MaterialIcon name="search" size={20} color="#888" />
-          <Text style={styles.searchPlaceholder}>Search for products...</Text>
-        </TouchableOpacity>
+        <SearchBar/>
 
         {/* Cart + Account container */}
         <View style={styles.rightSection}>
@@ -84,6 +78,10 @@ const Navbar: React.FC = () => {
 
           <Pressable onPress={()=>{closeDropdown(); navigation.navigate("AccountPrivacy");}}>
             <Text style={styles.dropdownItem}>Account Privacy</Text>
+          </Pressable>
+
+          <Pressable onPress={()=>{closeDropdown(); navigation.navigate("CustomerCare");}}>
+            <Text style={styles.dropdownItem}>Customer Care</Text>
           </Pressable>
 
           
